@@ -46,6 +46,7 @@ class PrettyJSONWidget(widgets.Textarea):
 
 class UPRNAdmin(admin.OSMGeoAdmin):
     list_display = ("uprn", "single_line_address")
+    search_fields = ["single_line_address"]
     formfield_overrides = {JSONField: {"widget": PrettyJSONWidget}}
     show_full_result_count = False
     paginator = LargeTablePaginator
