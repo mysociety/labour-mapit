@@ -16,6 +16,12 @@ class UPRN(models.Model):
     location = models.PointField()
     addressbase = models.JSONField()
 
+    # It's unnecessarily complex to index the value of a key in a JSONB
+    # field and perform `LIKE %`-style matching, so this field has been
+    # promoted from the AddressBase Core record to a field directly on
+    # the model.
+    single_line_address = models.TextField(db_index=True, editable=False)
+
     class Meta:
         ordering = ("uprn",)
         indexes = [GinIndex(fields=["addressbase"])]
