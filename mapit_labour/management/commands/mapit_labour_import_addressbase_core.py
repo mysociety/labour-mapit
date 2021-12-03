@@ -1,4 +1,6 @@
+from itertools import groupby
 from typing import Dict
+
 from django.core.management.base import LabelCommand
 from django.contrib.gis.geos import Point
 from django.db import transaction, IntegrityError
@@ -14,7 +16,7 @@ class Command(LabelCommand):
     label = "<AddressBase Core CSV file>"
 
     count = {}  # initialised in handle()
-    often = 1000
+    batch_size = 1000
     purge = False
 
     def add_arguments(self, parser):
@@ -30,8 +32,6 @@ class Command(LabelCommand):
     def handle_label(self, label: str, **options):
         self.purge = options["purge"]
 
-        if self.purge:
-            UPRN.objects.all().delete()
         with open(label, encoding="utf-8-sig") as f:
             self.handle_rows(DictReader(f))
 
@@ -44,40 +44,30 @@ class Command(LabelCommand):
         super().handle(*args, **kwargs)
 
     def handle_rows(self, csv: DictReader):
-        for row in csv:
-            self.handle_row(row)
+        if self.purge:
+            UPRN.objects.all().delete()
 
-            if self.count["total"] % self.often == 0:
+            for _, uprns in groupby(
+                (self.create_uprn(row) for row in csv),
+                lambda _: self.count["total"] // self.batch_size,
+            ):
+                with transaction.atomic():
+                    UPRN.objects.bulk_create(uprns)
                 self.print_stats()
         self.print_stats()
 
-    def handle_row(self, row: Dict[str, str]):
+    def create_uprn(self, row: Dict[str, str]):
         row = {k.lower(): v for k, v in row.items()}
-        e = float(row["easting"])
-        n = float(row["northing"])
-        location = Point(e, n, srid=27700)
-        postcode = row["postcode"].replace(" ", "")
-        uprn = row["uprn"]
 
-        if self.purge:
-            UPRN.objects.create(
-                uprn=uprn,
-                postcode=postcode,
-                location=location,
-                addressbase=row,
-            )
-            self.count["created"] += 1
-        else:
-            _, created = UPRN.objects.update_or_create(
-                uprn=uprn,
-                defaults=dict(
-                    postcode=postcode,
-                    location=location,
-                    addressbase=row,
-                ),
-            )
-            self.count["created" if created else "updated"] += 1
         self.count["total"] += 1
+        self.count["created"] += 1
+        return UPRN(
+            uprn=row["uprn"],
+            postcode=row["postcode"].replace(" ", ""),
+            location=Point(float(row["easting"]), float(row["northing"]), srid=27700),
+            single_line_address=row["single_line_address"],
+            addressbase=row,
+        )
 
     def print_stats(self):
         c = self.count
