@@ -250,7 +250,11 @@ LOGGING = {
         }
     },
     'loggers': {
-        'django.db.backends': {
+        # 'django.db.backends': {
+        #     'level': 'DEBUG',
+        #     'handlers': ['console'],
+        # },
+        'mapit_labour': {
             'level': 'DEBUG',
             'handlers': ['console'],
         }

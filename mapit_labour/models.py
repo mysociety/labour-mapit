@@ -24,7 +24,14 @@ class UPRN(models.Model):
 
     class Meta:
         ordering = ("uprn",)
-        indexes = [GinIndex(fields=["addressbase"])]
+        indexes = [
+            GinIndex(fields=["addressbase"]),
+            GinIndex(
+                name="mapit_labour_sl_address_gin",
+                fields=["single_line_address"],
+                opclasses=["gin_trgm_ops"],
+            ),
+        ]
 
     def __str__(self):
         return self.uprn

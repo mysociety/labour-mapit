@@ -1,14 +1,48 @@
 import itertools
+from logging import getLogger
 
 from django.shortcuts import render
-from mapit.shortcuts import output_json, get_object_or_404
 
+from mapit.shortcuts import output_json, get_object_or_404
 from mapit_labour.models import UPRN
 from mapit.models import Generation, Area
 from mapit.views.postcodes import add_codes, enclosing_areas
 from mapit.middleware import ViewException
 
-# Create your views here.
+logger = getLogger(__name__)
+
+# valid field names for AddressBase Core lookups
+FIELD_NAMES = [
+    "parent_uprn",
+    "uprn",
+    "udprn",
+    "usrn",
+    "toid",
+    "classification_code",
+    "easting",
+    "northing",
+    "latitude",
+    "longitude",
+    "rpc",
+    "last_update_date",
+    "po_box",
+    "organisation",
+    "sub_building",
+    "building_name",
+    "building_number",
+    "street_name",
+    "locality",
+    "town_name",
+    "post_town",
+    "island",
+    "postcode",
+    "delivery_point_suffix",
+    "gss_code",
+    "change_code",
+    # This does appear in the AddressBase Core record but is
+    # queried in a different way so isn't included in this list.
+    # "single_line_address",
+]
 
 
 def uprn(request, uprn, format="json"):
@@ -62,15 +96,31 @@ def uprn(request, uprn, format="json"):
 
 
 def addressbase(request):
-    if not request.GET:
+    lookup = {
+        k.lower(): request.GET[k].upper()
+        for k in request.GET.keys()
+        if k.lower() in FIELD_NAMES
+    }
+    single_line_address = request.GET.get("single_line_address")
+
+    if not lookup and not single_line_address:
         raise ViewException(
             "json",
             "At least one AddressBase Core field should be specified in the query parameters.",
             400,
         )
 
-    uprns = UPRN.objects.all()
-    for code, value in request.GET.items():
-        uprns = uprns.filter(codes__type__code__iexact=code, codes__code__iexact=value)
+    uprns = UPRN.objects.all().values_list("addressbase", flat=True)
 
-    return output_json([uprn.as_dict()["addressbase_core"] for uprn in uprns[:10]])
+    if lookup:
+        uprns = uprns.filter(addressbase__contains=lookup)
+        # return output_json(list(uprns[:10]))
+    if single_line_address:
+        uprns = uprns.filter(single_line_address__contains=single_line_address.upper())
+    return render(
+        request,
+        "mapit_labour/uprns.html",
+        {
+            "uprns": uprns[:10],
+        },
+    )
