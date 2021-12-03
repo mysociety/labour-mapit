@@ -1,0 +1,21 @@
+{% extends "mapit/base.html" %}
+{% load i18n %}
+
+{% block content %}
+
+<section class="details">
+  <h3>{% trans "UPRNs" %}</h3>
+  <ol class="area_list">
+    {% for uprn in uprns %}
+    <li>
+      <h3><a href="{% url 'mapit_labour-uprn' uprn=uprn.uprn format='html' %}">{{ uprn.uprn }}</a></h3>
+      <p>{{ uprn.single_line_address }}</p>
+    </li>
+
+    {% empty %}
+    <li>{% trans "No matching records found." %}</li>
+    {% endfor %}
+  </ol>
+</section>
+
+{% endblock %}

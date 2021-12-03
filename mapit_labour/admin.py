@@ -1,3 +1,4 @@
+from logging import getLogger
 import json
 
 from django.db.models import JSONField
@@ -6,9 +7,13 @@ from django.contrib.gis import admin
 from django.forms import widgets
 from django.core.paginator import Paginator
 from django.utils.functional import cached_property
+from django.urls import reverse
 
 
 from mapit_labour.models import UPRN
+
+logger = getLogger(__name__)
+
 
 # Adapted from https://medium.com/squad-engineering/estimated-counts-for-faster-django-admin-change-list-963cbf43683e
 class LargeTablePaginator(Paginator):
@@ -17,18 +22,22 @@ class LargeTablePaginator(Paginator):
     Overrides the count method of QuerySet objects to get an estimate instead of actual count when not filtered.
     However, this estimate can be stale and hence not fit for situations where the count of objects actually matter.
     """
+
     @cached_property
     def count(self):
         query = self.object_list.query
         if not query.where:
             try:
                 cursor = connection.cursor()
-                cursor.execute("SELECT reltuples FROM pg_class WHERE relname = %s",
-                               [query.model._meta.db_table])
+                cursor.execute(
+                    "SELECT reltuples FROM pg_class WHERE relname = %s",
+                    [query.model._meta.db_table],
+                )
                 return int(cursor.fetchone()[0])
             except:  # pragma: no cover
                 pass
         return super().count
+
 
 class PrettyJSONWidget(widgets.Textarea):
     def format_value(self, value):
@@ -51,8 +60,14 @@ class UPRNAdmin(admin.OSMGeoAdmin):
     show_full_result_count = False
     paginator = LargeTablePaginator
 
-    def single_line_address(self, obj):
-        return obj.addressbase['single_line_address']
+    def get_search_results(self, request, queryset, search_term):
+        return (
+            queryset.filter(single_line_address__contains=search_term.upper()),
+            False,
+        )
+
+    def view_on_site(self, obj):
+        return reverse("mapit_labour-uprn", kwargs={"uprn": obj.uprn, "format": "html"})
 
 
 admin.site.register(UPRN, UPRNAdmin)
