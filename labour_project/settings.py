@@ -153,6 +153,7 @@ MIDDLEWARE = [
     'django.contrib.sessions.middleware.SessionMiddleware',
     'django.middleware.common.CommonMiddleware',
     'django.contrib.auth.middleware.AuthenticationMiddleware',
+    'login_required.middleware.LoginRequiredMiddleware',
     'django.contrib.messages.middleware.MessageMiddleware',
     'django.middleware.cache.FetchFromCacheMiddleware',
     'mapit.middleware.JSONPMiddleware',
@@ -241,3 +242,9 @@ DATE_FORMAT = 'j F Y'
 DEFAULT_AUTO_FIELD = 'django.db.models.AutoField'
 
 INTERNAL_IPS = [ '127.0.0.1' ]
+
+LOGIN_URL = "/admin/login/"
+
+LOGIN_REQUIRED_IGNORE_PATHS = [
+    r'^/admin/'
+]
