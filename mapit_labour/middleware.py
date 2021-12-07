@@ -1,19 +1,30 @@
-from logging import getLogger
+import re
 
+from django.conf import settings
+from django.core.exceptions import PermissionDenied
 from login_required.middleware import LoginRequiredMiddleware
 
 from .models import APIKey
 
-logger = getLogger(__name__)
+ALLOWED_PATHS = [
+    re.compile(url) for url in getattr(settings, "API_KEY_AUTH_ALLOWED_PATHS", [])
+]
 
 
 class LoginOrAPIKeyRequiredMiddleware(LoginRequiredMiddleware):
-    def _api_key_exists(self, request):
-        if api_key := request.GET.get("api_key"):
-            return APIKey.objects.filter(key=api_key).exists()
+    def _api_key_exists_and_allowed(self, request):
+        if not any(url.match(request.path) for url in ALLOWED_PATHS):
+            return False
+
+        if APIKey.objects.filter(
+            key=request.GET.get("api_key"), user__is_active=True
+        ).exists():
+            return True
+        else:
+            raise PermissionDenied
 
     def process_request(self, request):
-        if self._api_key_exists(request):
+        if self._api_key_exists_and_allowed(request):
             return None
         else:
-            return self._login_required(request)
+            return super().process_request(request)
