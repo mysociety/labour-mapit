@@ -10,7 +10,7 @@ from django.utils.functional import cached_property
 from django.urls import reverse
 
 
-from mapit_labour.models import UPRN
+from mapit_labour.models import UPRN, APIKey
 
 logger = getLogger(__name__)
 
@@ -85,3 +85,5 @@ class UPRNAdmin(admin.OSMGeoAdmin):
 
 
 admin.site.register(UPRN, UPRNAdmin)
+
+admin.site.register(APIKey)
