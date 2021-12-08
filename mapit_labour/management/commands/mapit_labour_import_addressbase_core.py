@@ -1,14 +1,33 @@
-from itertools import groupby
+from itertools import groupby, islice
 from typing import Dict
+from collections import deque
 
+from django.conf import settings
 from django.core.management.base import LabelCommand
 from django.contrib.gis.geos import Point
-from django.db import transaction, IntegrityError
+from django.db import transaction, connection
 
 from csv import DictReader
 
 
 from mapit_labour.models import UPRN
+
+if settings.DEBUG:
+    # Disable the Django SQL query log, which eats memory.
+    # It's normally cleared after a request but we're not
+    # running in a request-response cycle here so it just keeps
+    # growing and will cause problems when importing this much data.
+    connection.queries_log = deque(maxlen=0)
+
+
+def batched(iterable, size):
+    """
+    Split an iterable into smaller iterables no bigger than size
+    """
+    return (
+        (g for _, g in item)
+        for _, item in groupby(enumerate(iterable), key=lambda x: x[0] // size)
+    )
 
 
 class Command(LabelCommand):
@@ -18,6 +37,7 @@ class Command(LabelCommand):
     count = {}  # initialised in handle()
     batch_size = 1000
     purge = False
+    limit = 0
 
     def add_arguments(self, parser):
         super().add_arguments(parser)
@@ -25,12 +45,28 @@ class Command(LabelCommand):
             "--purge",
             action="store_true",
             dest="purge",
-            default=False,
+            default=self.purge,
             help="Purge all existing UPRNs and import afresh",
+        )
+        parser.add_argument(
+            "--batch-size",
+            dest="batch_size",
+            type=int,
+            default=self.batch_size,
+            help=f"Batch size for bulk INSERT/UPDATE operations. Default {self.batch_size}",
+        )
+        parser.add_argument(
+            "--limit",
+            dest="limit",
+            type=int,
+            default=self.limit,
+            help="Stop after importing this many rows from the CSV. 0 (default) for no limit.",
         )
 
     def handle_label(self, label: str, **options):
         self.purge = options["purge"]
+        self.batch_size = options["batch_size"]
+        self.limit = options["limit"]
 
         with open(label, encoding="utf-8-sig") as f:
             self.handle_rows(DictReader(f))
@@ -47,12 +83,9 @@ class Command(LabelCommand):
         if self.purge:
             UPRN.objects.all().delete()
 
-            for _, uprns in groupby(
-                (self.create_uprn(row) for row in csv),
-                lambda _: self.count["total"] // self.batch_size,
-            ):
+            for rows in batched(islice(csv, self.limit or None), self.batch_size):
                 with transaction.atomic():
-                    UPRN.objects.bulk_create(uprns)
+                    UPRN.objects.bulk_create(self.create_uprn(row) for row in rows)
                 self.print_stats()
         self.print_stats()
 
