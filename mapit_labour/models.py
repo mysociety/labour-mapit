@@ -16,7 +16,7 @@ from mapit.models import str2int
 class UPRN(models.Model):
     uprn = models.PositiveBigIntegerField(primary_key=True)
     postcode = models.CharField(max_length=7)
-    location = models.PointField()
+    location = models.PointField(srid=27700)
     addressbase = models.JSONField()
 
     # It's unnecessarily complex to index the value of a key in a JSONB
@@ -40,28 +40,28 @@ class UPRN(models.Model):
         return str(self.uprn)
 
     def as_dict(self):
-        (easting, northing) = self.as_uk_grid()
+        (lon, lat) = self.as_wgs84()
 
         return {
             "uprn": self.uprn,
             "postcode": self.postcode,
-            "wgs84_lon": self.location[0],
-            "wgs84_lat": self.location[1],
-            "easting": easting,
-            "northing": northing,
+            "easting": self.location[0],
+            "northing": self.location[1],
+            "wgs84_lon": lon,
+            "wgs84_lat": lat,
             "addressbase_core": self.addressbase,
         }
 
-    def as_uk_grid(self):
+    def as_wgs84(self):
         cursor = connection.cursor()
-        srid = 27700
+        srid = 4326
         cursor.execute(
-            "SELECT ST_AsText(ST_Transform(ST_GeomFromText('POINT(%f %f)', 4326), %d))"
+            "SELECT ST_AsText(ST_Transform(ST_GeomFromText('POINT(%f %f)', 27700), %d))"
             % (self.location[0], self.location[1], srid)
         )
         row = cursor.fetchone()
         m = re.match(r"POINT\((.*?) (.*)\)", row[0])
-        return list(map(str2int, m.groups()))
+        return list(map(float, m.groups()))
 
 
 # Taken from https://github.com/mysociety/mapit.mysociety.org, sans-Redis bits
