@@ -1,13 +1,15 @@
 import itertools
 from logging import getLogger
 
+from django.http.response import HttpResponse
 from django.shortcuts import render
 
 from mapit.shortcuts import output_json, get_object_or_404
-from mapit_labour.models import UPRN
 from mapit.models import Generation, Area
 from mapit.views.postcodes import add_codes, enclosing_areas
 from mapit.middleware import ViewException
+
+from .models import UPRN
 
 logger = getLogger(__name__)
 
@@ -124,3 +126,11 @@ def addressbase(request):
             "uprns": uprns[:10],
         },
     )
+
+
+def health_check(request):
+    """
+    This is just a simple view that the Varnish load balancer uses to determine
+    whether this site is available and healthy.
+    """
+    return HttpResponse("Everything OK")
