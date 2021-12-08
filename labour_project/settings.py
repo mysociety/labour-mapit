@@ -246,7 +246,8 @@ INTERNAL_IPS = [ '127.0.0.1' ]
 LOGIN_URL = "/admin/login/"
 
 LOGIN_REQUIRED_IGNORE_PATHS = [
-    r'^/admin/'
+    r'^/admin/',
+    r'/health',
 ]
 
 API_KEY_AUTH_ALLOWED_PATHS = [
