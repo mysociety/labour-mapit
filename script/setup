@@ -1,0 +1,15 @@
+#!/bin/bash
+
+# abort on any errors
+set -e
+
+# check that we are in the expected directory
+cd `dirname $0`/..
+
+# This should contain commmands to reset the environment to a default state.
+# Some possible examples:
+# rm conf/general.yml
+# poetry install --no-root --remove-untracked
+
+# Run the update script
+./script/update
