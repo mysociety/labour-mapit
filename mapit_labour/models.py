@@ -16,7 +16,7 @@ from mapit.models import str2int
 class UPRN(models.Model):
     uprn = models.PositiveBigIntegerField(primary_key=True)
     postcode = models.CharField(max_length=7)
-    location = models.PointField()
+    location = models.PointField(srid=27700)
     addressbase = models.JSONField()
 
     # It's unnecessarily complex to index the value of a key in a JSONB
