@@ -104,4 +104,7 @@ class Command(LabelCommand):
 
     def print_stats(self):
         c = self.count
-        print(f"Imported {c['total']} ({c['created']} new, {c['updated']} updated)")
+        print(
+            f"Imported {c['total']} ({c['created']} new, {c['updated']} updated)",
+            file=self.stdout,
+        )
