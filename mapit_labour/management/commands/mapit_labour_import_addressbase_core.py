@@ -86,13 +86,15 @@ class Command(LabelCommand):
         self.print_stats()
 
     def create_uprn(self, row: Dict[str, str]):
+        row = {k.lower(): v for k, v in row.items()}
+
         self.count["total"] += 1
         self.count["created"] += 1
         return UPRN(
-            uprn=row["UPRN"],
-            postcode=row["POSTCODE"].replace(" ", ""),
-            location=Point(float(row["EASTING"]), float(row["NORTHING"]), srid=27700),
-            single_line_address=row["SINGLE_LINE_ADDRESS"],
+            uprn=row["uprn"],
+            postcode=row["postcode"].replace(" ", ""),
+            location=Point(float(row["easting"]), float(row["northing"]), srid=27700),
+            single_line_address=row["single_line_address"],
             addressbase=row,
         )
 
