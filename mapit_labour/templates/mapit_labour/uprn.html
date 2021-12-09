@@ -11,8 +11,8 @@
       <li>Postcode: <a href="{% url "mapit-postcode" postcode=uprn.postcode format="html" %}">{{ uprn.postcode }}</a>
       <li>OSGB E/N: {{ uprn.easting }}, {{ uprn.northing }}
       <li>{% trans "WGS84 lat/lon" %}: <a href="https://tools.wmflabs.org/geohack/geohack.php?params={{ uprn.wgs84_lat|floatformat:-6 }};{{ uprn.wgs84_lon|floatformat:-6 }}">{{ uprn.wgs84_lat|floatformat:-6 }}, {{ uprn.wgs84_lon|floatformat:-6 }}</a>
-      {% url json_view uprn=uprn.uprn as json_url %}
-      <li>{% blocktrans %}Get <a href="{{ json_url }}">this data as JSON</a>{% endblocktrans %}</li>
+      {% url json_view uprn=uprn.uprn format='json' as json_url %}
+      <li>{% blocktrans %}Get <a href="{{ json_url }}?api_key={{ api_key }}">this data as JSON</a>{% endblocktrans %}</li>
     </ul>
 
     {% block area_info_extra %}{% endblock %}

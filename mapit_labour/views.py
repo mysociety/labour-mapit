@@ -79,6 +79,9 @@ def uprn(request, uprn, format="json"):
     areas = itertools.chain(areas, Area.objects.filter(id__in=extra))
 
     if format == "html":
+        api_key = None
+        if key := request.user.api_key.first():
+            api_key = key.key
         return render(
             request,
             "mapit_labour/uprn.html",
@@ -86,6 +89,7 @@ def uprn(request, uprn, format="json"):
                 "uprn": uprn.as_dict(),
                 "areas": areas,
                 "json_view": "mapit_labour-uprn",
+                "api_key": api_key,
             },
         )
 
