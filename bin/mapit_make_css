@@ -1,0 +1,58 @@
+#!/usr/bin/env python
+#
+# mapit_make_css:
+# Generate CSS files from SCSS files.
+# The default MapIt mapit.scss file assumes that the Python package has been
+# installed in editable mode and that the mysociety-docs-theme git submodule
+# has been checked out. This isn't the case when MapIt has been installed by
+# Poetry, so we need to replace the mapit.scss with our own that uses the
+# correct path to mysociety-docs-theme (which is a git submodule of the
+# labour-mapit project and *is* present).
+# This whole thing should probably be replaced by django-compressor and
+# django-libsass.
+
+import os
+from pathlib import Path
+import subprocess
+import mapit
+
+parent_dir = Path(__file__).resolve().parent.parent
+
+sass_dir = parent_dir / "static" / "mapit" / "sass"
+css_dir = parent_dir / "static" / "mapit" / "css"
+os.makedirs(sass_dir, exist_ok=True)
+os.makedirs(css_dir, exist_ok=True)
+
+mapit_scss_dir = Path(mapit.__file__).parent / "static" / "mapit" / "sass"
+theme_dir = parent_dir / "mysociety-docs-theme"
+
+in_scss_path = sass_dir / "mapit.scss"
+out_css_path = css_dir / "mapit.css"
+
+with open(in_scss_path, "w") as core_file:
+    core_file.write(
+        f"""@import "{mapit_scss_dir}/variables";
+@import "{mapit_scss_dir}/mixins";
+
+@import "{theme_dir}/sass/global";
+@import "{mapit_scss_dir}/docs-theme-overrides";
+
+@import "{mapit_scss_dir}/header";
+@import "{mapit_scss_dir}/footer";
+@import "{mapit_scss_dir}/content";
+@import "{mapit_scss_dir}/forms";
+@import "{mapit_scss_dir}/homepage";
+@import "{mapit_scss_dir}/area";
+"""
+    )
+
+subprocess.check_call(
+    [
+        "pysassc",
+        "--sourcemap",
+        "--style",
+        "compressed",
+        in_scss_path,
+        out_css_path,
+    ]
+)

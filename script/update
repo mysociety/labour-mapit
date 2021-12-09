@@ -8,4 +8,5 @@ cd `dirname $0`/..
 
 poetry install --no-root
 poetry run python manage.py migrate
+poetry run ./bin/mapit_make_css
 poetry run python manage.py collectstatic --no-input
