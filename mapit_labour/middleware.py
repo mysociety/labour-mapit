@@ -16,6 +16,9 @@ class LoginOrAPIKeyRequiredMiddleware(LoginRequiredMiddleware):
         if not any(url.match(request.path) for url in ALLOWED_PATHS):
             return False
 
+        if request.user.is_authenticated:
+            return False
+
         if APIKey.objects.filter(
             key=request.GET.get("api_key"), user__is_active=True
         ).exists():
