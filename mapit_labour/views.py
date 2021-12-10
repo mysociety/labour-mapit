@@ -120,16 +120,16 @@ def addressbase(request):
 
     if lookup:
         uprns = uprns.filter(addressbase__contains=lookup)
-        # return output_json(list(uprns[:10]))
     if single_line_address:
         uprns = uprns.filter(single_line_address__contains=single_line_address.upper())
-    return render(
-        request,
-        "mapit_labour/uprns.html",
-        {
-            "uprns": uprns[:10],
-        },
-    )
+    return output_json(list(uprns[:10]))
+    # return render(
+    #     request,
+    #     "mapit_labour/uprns.html",
+    #     {
+    #         "uprns": uprns[:10],
+    #     },
+    # )
 
 
 def health_check(request):
