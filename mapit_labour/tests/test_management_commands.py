@@ -20,7 +20,6 @@ class AddressBaseImportTest(TestCase):
             "mapit_labour_import_addressbase_core",
             fixtures_dir / "addressbase-core-tiny.csv",
             purge=True,
-            # These keep the commands quiet, comment out if you're debugging
             stderr=stderr,
             stdout=stdout,
         )
