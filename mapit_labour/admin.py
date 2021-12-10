@@ -15,6 +15,15 @@ from mapit_labour.models import UPRN, APIKey
 logger = getLogger(__name__)
 
 
+class OSMHTTPSGeoAdmin(admin.OSMGeoAdmin):
+    """
+    Use a custom template that overrides the OpenStreetMap tile URLs
+    to be the HTTPS versions.
+    """
+
+    map_template = "gis/admin/osm_https.html"
+
+
 # Adapted from https://medium.com/squad-engineering/estimated-counts-for-faster-django-admin-change-list-963cbf43683e
 class LargeTablePaginator(Paginator):
     max_pages = 20
@@ -62,7 +71,7 @@ class PrettyJSONWidget(widgets.Textarea):
             return super(PrettyJSONWidget, self).format_value(value)
 
 
-class UPRNAdmin(admin.OSMGeoAdmin):
+class UPRNAdmin(OSMHTTPSGeoAdmin):
     list_display = ("uprn", "single_line_address")
     list_display_links = ("uprn", "single_line_address")
     search_fields = ["single_line_address"]
@@ -70,6 +79,7 @@ class UPRNAdmin(admin.OSMGeoAdmin):
     list_per_page = 25
     show_full_result_count = False
     paginator = LargeTablePaginator
+    modifiable = False
 
     def get_search_results(self, request, queryset, search_term):
         if search_term:
@@ -85,5 +95,4 @@ class UPRNAdmin(admin.OSMGeoAdmin):
 
 
 admin.site.register(UPRN, UPRNAdmin)
-
 admin.site.register(APIKey)
