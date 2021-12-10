@@ -252,7 +252,7 @@ LOGIN_REQUIRED_IGNORE_PATHS = [
 ]
 
 API_KEY_AUTH_ALLOWED_PATHS = [
-    r'^/uprn/\d+\.json',
+    r'^/uprn/\d+(\.json)?$',
     r'^/addressbase$',
     # TODO: add standard MapIt API urls
 ]
