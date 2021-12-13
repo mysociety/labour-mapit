@@ -17,7 +17,7 @@ if settings.DEBUG:
     # It's normally cleared after a request but we're not
     # running in a request-response cycle here so it just keeps
     # growing and will cause problems when importing this much data.
-    connection.queries_log = deque(maxlen=0)
+    connection.queries_log = deque(maxlen=0)  # pragma: no cover
 
 
 def batched(iterable, size):

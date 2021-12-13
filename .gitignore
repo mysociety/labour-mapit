@@ -3,3 +3,5 @@ __pycache__
 .envrc
 conf/general.yml
 static/mapit
+.coverage
+coverage.json
