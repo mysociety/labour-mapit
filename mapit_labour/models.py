@@ -96,7 +96,7 @@ def create_key_for_new_user(sender, **kwargs):
     # making sure the account should exist.
     try:
         key = APIKey.objects.get(user=user)
-        key.delete()
+        key.delete()  # pragma: no cover
     except APIKey.DoesNotExist:
         pass
 

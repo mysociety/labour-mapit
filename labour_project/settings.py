@@ -1,6 +1,6 @@
 import os
 import yaml
-from .utils import skip_unreadable_post, find_module
+from .utils import skip_unreadable_post
 
 # Path to here is something like
 # .../<repo>/<project_name>/settings.py
@@ -30,7 +30,7 @@ if MAPIT_WITHIN_MAXIMUM.is_integer():
 
 # Country is currently one of GB, NO, IT, KE, SA, or ZA.
 # Optional; country specific things won't happen if not set.
-MAPIT_COUNTRY = config.get('COUNTRY', '')
+MAPIT_COUNTRY = "GB"
 
 # A dictionary of IP addresses, User Agents, or functions that should be
 # excluded from rate limiting. Optional.
@@ -99,28 +99,9 @@ ALLOWED_HOSTS = ['*']
 # system time zone.
 # Language code for this installation. All choices can be found here:
 # http://www.i18nguy.com/unicode/language-identifiers.html
-if MAPIT_COUNTRY == 'GB':
-    TIME_ZONE = 'Europe/London'
-    LANGUAGE_CODE = 'en-gb'
-    POSTCODES_AVAILABLE = PARTIAL_POSTCODES_AVAILABLE = True
-elif MAPIT_COUNTRY == 'NO':
-    TIME_ZONE = 'Europe/Oslo'
-    LANGUAGE_CODE = 'no'
-    POSTCODES_AVAILABLE = PARTIAL_POSTCODES_AVAILABLE = True
-elif MAPIT_COUNTRY == 'IT':
-    TIME_ZONE = 'Europe/Rome'
-    LANGUAGE_CODE = 'it'
-    POSTCODES_AVAILABLE = True
-    PARTIAL_POSTCODES_AVAILABLE = False
-elif MAPIT_COUNTRY == 'ZA':
-    TIME_ZONE = 'Africa/Johannesburg'
-    LANGUAGE_CODE = 'en-za'
-    POSTCODES_AVAILABLE = PARTIAL_POSTCODES_AVAILABLE = False
-else:
-    TIME_ZONE = 'Europe/London'
-    LANGUAGE_CODE = 'en'
-    POSTCODES_AVAILABLE = True
-    PARTIAL_POSTCODES_AVAILABLE = False
+TIME_ZONE = 'Europe/London'
+LANGUAGE_CODE = 'en-gb'
+POSTCODES_AVAILABLE = PARTIAL_POSTCODES_AVAILABLE = True
 
 # If you set this to False, Django will make some optimizations so as not
 # to load the internationalization machinery.
@@ -217,6 +198,7 @@ INSTALLED_APPS = [
     'django.contrib.admin',
     'django.contrib.gis',
     'django.contrib.staticfiles',
+    'mapit_gb',
     'mapit',
     'mapit_labour',
 ]
@@ -262,15 +244,6 @@ LOGGING = {
         }
     },
 }
-
-if MAPIT_COUNTRY:
-    try:
-        c = 'mapit_%s' % MAPIT_COUNTRY.lower()
-        find_module(c)
-        # Put before 'mapit', so country templates take precedence
-        INSTALLED_APPS.insert(INSTALLED_APPS.index('mapit'), c)
-    except:
-        pass
 
 DATE_FORMAT = 'j F Y'
 
