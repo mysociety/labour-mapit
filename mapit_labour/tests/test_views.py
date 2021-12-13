@@ -3,30 +3,8 @@ import json
 from django.test import TestCase
 from django.conf import settings
 from django.contrib.auth.models import User
-from django.core.management import call_command
 
-
-from mapit_labour.models import APIKey
-
-API_KEY = "iiyNmSap5LSs0TcTs2agFZWqPSBr8VxXaHarR1Cv"
-
-
-class LoadTestData:
-    _api_key = None
-
-    @classmethod
-    def setUpTestData(cls):
-        user = User.objects.create_user("testuser", "", "password")
-        cls._api_key = user.api_key.first().key
-
-        fixtures_dir = Path(settings.BASE_DIR) / "mapit_labour" / "tests" / "fixtures"
-        call_command(
-            "mapit_labour_import_addressbase_core",
-            fixtures_dir / "addressbase-core-tiny.csv",
-            purge=True,
-            stderr=StringIO(),
-            stdout=StringIO(),
-        )
+from .utils import LoadTestData
 
 
 class LoginRequiredTestCase(LoadTestData, TestCase):
@@ -295,11 +273,20 @@ class AddressBaseTestCase(LoadTestData, TestCase):
         pass
         # test that addressbase lookup works for single_line_address
 
+    def test_invalid_query_params(self):
+        resp = self.client.get("/addressbase")
+        self.assertJSONEqual(
+            resp.content,
+            {
+                "code": 400,
+                "error": "At least one AddressBase Core field should be specified in the query parameters.",
+            },
+        )
+        self.assertEqual(resp.status_code, 400)
+        # test that addressbase no parameters has no results
+        # test that addressbase non-matching params returns no results
+
 
 def unstream(response):
     # Convert the content of a StreamingHttpResponse back to a single bytestring
     return b"".join(response.streaming_content)
-
-
-# test that addressbase no parameters has no results
-# test that addressbase non-matching params returns no results

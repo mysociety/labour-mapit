@@ -15,7 +15,7 @@ PARENT_DIR = os.path.dirname(BASE_DIR)
 try:
     with open(os.path.join(BASE_DIR, 'conf', 'general.yml'), 'r') as fp:
         config = yaml.load(fp, Loader=yaml.SafeLoader)
-except:
+except: # pragma: no cover
     config = {}
 
 # An EPSG code for what the areas are stored as, e.g. 27700 is OSGB, 4326 for
@@ -30,7 +30,7 @@ if MAPIT_WITHIN_MAXIMUM.is_integer():
 
 # Country is currently one of GB, NO, IT, KE, SA, or ZA.
 # Optional; country specific things won't happen if not set.
-MAPIT_COUNTRY = config.get('COUNTRY', '')
+MAPIT_COUNTRY = "GB"
 
 # A dictionary of IP addresses, User Agents, or functions that should be
 # excluded from rate limiting. Optional.
@@ -52,9 +52,9 @@ if DEBUG:
         }
     }
     CACHE_MIDDLEWARE_SECONDS = 0
-else:
+else: # pragma: no cover
     try:
-        import memcache  # noqa
+        import memcache
         CACHES = {
             'default': {
                 'BACKEND': 'django.core.cache.backends.memcached.MemcachedCache',
