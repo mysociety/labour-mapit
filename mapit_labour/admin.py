@@ -96,3 +96,6 @@ class UPRNAdmin(OSMHTTPSGeoAdmin):
 
 admin.site.register(UPRN, UPRNAdmin)
 admin.site.register(APIKey)
+
+admin.site.site_header = "Labour MapIt"
+admin.site.site_title = "Labour MapIt"
