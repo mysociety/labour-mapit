@@ -20,7 +20,7 @@ except: # pragma: no cover
 
 # An EPSG code for what the areas are stored as, e.g. 27700 is OSGB, 4326 for
 # WGS84. Optional, defaults to 4326.
-MAPIT_AREA_SRID = int(config.get('AREA_SRID', 4326))
+MAPIT_AREA_SRID = 27700
 
 # Set this to the maximum distance (in AREA_SRID units) allowed for the within
 # parameter to the point call. Optional, defaults to 0 (off).
