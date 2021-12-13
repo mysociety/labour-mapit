@@ -35,6 +35,7 @@ class UPRN(models.Model):
                 opclasses=["gin_trgm_ops"],
             ),
         ]
+        verbose_name = "UPRN"
 
     def __str__(self):
         return str(self.uprn)
@@ -71,6 +72,9 @@ class APIKey(models.Model):
     )
     key = models.CharField(max_length=40, blank=False, unique=True)
     created_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        verbose_name = "API key"
 
     def __str__(self):
         return "%s: %s" % (self.user, self.key)
