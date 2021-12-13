@@ -1,0 +1,22 @@
+{% load i18n %}
+
+<header class="site-header">
+    <div class="container">
+        <a href="{% url 'mapit_index' %}" class="site-title"><h1>Labour MapIt</h1></a>
+        <nav role="navigation" class="site-nav">
+            <ul>
+                <li>
+                    <a href="/overview">{% trans "Overview" %}</a>
+                </li>
+                <li>
+                    <a href="{% url 'mapit_index' %}">{% trans "API Documentation" %}</a>
+                </li>
+                {% if request.user.is_authenticated and request.user.is_staff %}
+                    <li>
+                        <a href="{% url 'admin:index' %}">Admin</a>
+                    </li>
+                {% endif %}
+            </ul>
+        </nav>
+    </div>
+</header>

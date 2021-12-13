@@ -191,9 +191,9 @@ INSTALLED_APPS = [
     'django.contrib.admin',
     'django.contrib.gis',
     'django.contrib.staticfiles',
+    'mapit_labour',
     'mapit_gb',
     'mapit',
-    'mapit_labour',
 ]
 
 if DEBUG:
