@@ -1,5 +1,7 @@
 from django.contrib.auth.models import User
+from django.contrib.gis.geos import Polygon
 from django.test import TestCase
+from mapit.models import Area, Generation, Geometry, Type
 
 from .utils import LoadTestData
 
@@ -104,6 +106,8 @@ class APIKeyTestCase(LoadTestData, TestCase):
 
 
 class UPRNLookupTestCase(LoadTestData, TestCase):
+    fixtures = ["uk", "test_areas"]
+
     def setUp(self):
         self.assertTrue(self.client.login(username="testuser", password="password"))
 
@@ -111,10 +115,25 @@ class UPRNLookupTestCase(LoadTestData, TestCase):
         self.assertJSONEqual(
             self.client.get("/uprn/77281020.json").content,
             {
-                "areas": {},
+                "areas": {
+                    "1": {
+                        "all_names": {},
+                        "codes": {},
+                        "country": "",
+                        "country_name": "-",
+                        "generation_high": 1,
+                        "generation_low": 1,
+                        "id": 1,
+                        "name": "WMC Area A",
+                        "parent_area": None,
+                        "type": "WMC",
+                        "type_name": "UK Parliament constituency",
+                    }
+                },
                 "easting": 297350.0,
                 "northing": 92996.0,
                 "postcode": "TE15TT",
+                "shortcuts": {"WMC": 1},
                 "uprn": 77281020,
                 "wgs84_lat": 50.72747506213238,
                 "wgs84_lon": -3.455748209039153,

@@ -1,0 +1,32 @@
+[
+    {
+        "model": "mapit.area",
+        "pk": 1,
+        "fields": {
+            "name": "WMC Area A",
+            "parent_area": null,
+            "type": 6,
+            "country": null,
+            "generation_low": 1,
+            "generation_high": 1,
+            "countries": []
+        }
+    },
+    {
+        "model": "mapit.geometry",
+        "pk": 1,
+        "fields": {
+            "area": 1,
+            "polygon": "SRID=27700;POLYGON ((297340.0 93006.0, 297340.0 92986.0, 297360.0 92986.0, 297360.0 93006.0, 297340.0 93006.0))"
+        }
+    },
+    {
+        "model": "mapit.generation",
+        "pk": 1,
+        "fields": {
+            "active": true,
+            "created": "2021-12-14T15:29:21.988",
+            "description": "Boundary Line October 2021"
+        }
+    }
+]
