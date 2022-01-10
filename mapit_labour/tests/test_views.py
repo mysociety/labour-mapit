@@ -50,6 +50,8 @@ class LoginRequiredTestCase(LoadTestData, TestCase):
 
 
 class APIKeyTestCase(LoadTestData, TestCase):
+    fixtures = ["uk", "test_areas"]
+
     def test_api_key_required(self):
         for url in (
             "/uprn/77281020.json",
@@ -101,6 +103,28 @@ class APIKeyTestCase(LoadTestData, TestCase):
             f"/uprn/123098123?api_key={self._api_key}",
             f"/addressbase?single_line_address=testville&api_key={self._api_key}",
             f"/addressbase?street_name=zettabyte+road&api_key={self._api_key}",
+        ):
+            self.assertEqual(self.client.get(url).status_code, 403)
+
+    def test_mapit_api_calls(self):
+        User.objects.filter(username="testuser").update(is_active=True)
+        for url in (
+            f"/area/1.json?api_key={self._api_key}",
+            f"/area/1?api_key={self._api_key}",
+            f"/area/1/geometry?api_key={self._api_key}",
+            f"/areas/WMC?api_key={self._api_key}",
+            f"/generations?api_key={self._api_key}",
+            f"/generations.json?api_key={self._api_key}",
+        ):
+            self.assertEqual(self.client.get(url).status_code, 200)
+
+        for url in (
+            f"/area/1.json",
+            f"/area/1",
+            f"/area/1/geometry",
+            f"/areas/WMC",
+            f"/generations",
+            f"/generations.json",
         ):
             self.assertEqual(self.client.get(url).status_code, 403)
 
