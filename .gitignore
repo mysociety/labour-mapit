@@ -4,3 +4,4 @@ __pycache__
 conf/general.yml
 static/mapit
 .coverage
+coverage.json
