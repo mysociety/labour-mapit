@@ -249,6 +249,7 @@ LOGIN_URL = "/admin/login/"
 LOGIN_REQUIRED_IGNORE_PATHS = [
     r'^/admin/',
     r'/health',
+    r'/favicon.ico', # XXX update Apache config so this request never reaches Django
 ]
 
 API_KEY_AUTH_ALLOWED_PATHS = [
