@@ -266,3 +266,5 @@ API_KEY_AUTH_ALLOWED_PATHS = [
     r'^/areas$',
     r'^/code/',
 ]
+
+ADDRESSBASE_RESULTS_LIMIT = config.get('ADDRESSBASE_RESULTS_LIMIT', 100)

@@ -3,6 +3,7 @@ from logging import getLogger
 
 from django.http.response import HttpResponse
 from django.shortcuts import render
+from django.conf import settings
 
 from mapit.shortcuts import output_json, get_object_or_404
 from mapit.models import Generation, Area
@@ -122,14 +123,7 @@ def addressbase(request):
         uprns = uprns.filter(addressbase__contains=lookup)
     if single_line_address:
         uprns = uprns.filter(single_line_address__contains=single_line_address.upper())
-    return output_json(list(uprns[:10]))
-    # return render(
-    #     request,
-    #     "mapit_labour/uprns.html",
-    #     {
-    #         "uprns": uprns[:10],
-    #     },
-    # )
+    return output_json(list(uprns[: settings.ADDRESSBASE_RESULTS_LIMIT]))
 
 
 def health_check(request):

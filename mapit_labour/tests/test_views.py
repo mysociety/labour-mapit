@@ -1,6 +1,6 @@
 from django.contrib.auth.models import User
 from django.contrib.gis.geos import Polygon
-from django.test import TestCase
+from django.test import TestCase, override_settings
 from mapit.models import Area, Generation, Geometry, Type
 
 from .utils import LoadTestData
@@ -279,7 +279,6 @@ class AddressBaseTestCase(LoadTestData, TestCase):
         self.assertTrue(self.client.login(username="testuser", password="password"))
 
     def test_fields_lookup(self):
-
         # test multiple matching records are returned
         self.assertJSONEqual(
             unstream(self.client.get("/addressbase?town_name=testville")),
@@ -307,6 +306,13 @@ class AddressBaseTestCase(LoadTestData, TestCase):
                 unstream(self.client.get(f"/addressbase?{q}")),
                 [self._uprn2],
             )
+
+    @override_settings(ADDRESSBASE_RESULTS_LIMIT=1)
+    def test_limiting_result_count(self):
+        self.assertJSONEqual(
+            unstream(self.client.get("/addressbase?town_name=testville")),
+            [self._uprn1],
+        )
 
     def test_single_line_address_lookup(self):
         pass

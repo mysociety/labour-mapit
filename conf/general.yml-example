@@ -37,3 +37,6 @@ BUGS_EMAIL: 'example@example.org'
 
 # Text to prepend to the subject of error emails. Overrides Django default. Optional.
 EMAIL_SUBJECT_PREFIX: '[MapIt] '
+
+# Maximum number of results returned from /addressbase API call
+ADDRESSBASE_RESULTS_LIMIT: 100
