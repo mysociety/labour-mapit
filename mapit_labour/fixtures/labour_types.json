@@ -1,0 +1,4 @@
+[
+    { "pk": 52, "model": "mapit.type", "fields": { "code": "LBR", "description": "Labour branch" } },
+    { "pk": 5, "model": "mapit.codetype", "fields": { "code": "lbr", "description": "Labour branch" } }
+]
