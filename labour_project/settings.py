@@ -246,6 +246,10 @@ INTERNAL_IPS = [ '127.0.0.1' ]
 
 LOGIN_URL = "/admin/login/"
 
+FILE_UPLOAD_HANDLERS = [
+    'django.core.files.uploadhandler.TemporaryFileUploadHandler',
+]
+
 LOGIN_REQUIRED_IGNORE_PATHS = [
     r'^/admin/',
     r'/health',

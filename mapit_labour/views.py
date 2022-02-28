@@ -1,7 +1,7 @@
 import itertools
 from logging import getLogger
 
-from django.http.response import HttpResponse
+from django.http.response import HttpResponse, HttpResponseRedirect
 from django.shortcuts import render
 from django.conf import settings
 
@@ -11,6 +11,7 @@ from mapit.views.postcodes import add_codes, enclosing_areas
 from mapit.middleware import ViewException
 
 from .models import UPRN
+from .forms import BranchUploadForm
 
 logger = getLogger(__name__)
 
@@ -132,3 +133,14 @@ def health_check(request):
     whether this site is available and healthy.
     """
     return HttpResponse("Everything OK")
+
+
+def branches_upload(request):
+    if request.method == "POST":
+        form = BranchUploadForm(request.POST, request.FILES)
+        if form.is_valid():
+            form.create_branches()
+            return HttpResponseRedirect("/success/url/")
+    else:
+        form = BranchUploadForm()
+    return render(request, "mapit_labour/branches_upload.html", {"form": form})
