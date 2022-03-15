@@ -114,5 +114,13 @@ class Command(LabelCommand):
                         # (e.g. LineStrings/MultiLineStrings where the subarea only borders
                         # the parent geometry but doesn't actually overlap)
                         p = p.intersection(parent_poly.polygon).buffer(0.0)
-                    if not p.empty:
+                    if p.empty:
+                        continue
+                    # Sometimes the intersection results in a MultiPolygon, which
+                    # we'll need to store as separate Polygon geometries
+                    if p.geom_type == "MultiPolygon":
+                        print(f"Multis for {a.id}")
+                        for poly in p:
+                            a.polygons.create(polygon=poly)
+                    else:
                         a.polygons.create(polygon=p)
