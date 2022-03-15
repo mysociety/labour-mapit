@@ -27,7 +27,7 @@ class Command(LabelCommand):
             action="store_true",
             dest="purge",
             default=False,
-            help="Delete all existing BR areas first",
+            help="Delete all existing LBR areas first",
         )
 
     @transaction.atomic
