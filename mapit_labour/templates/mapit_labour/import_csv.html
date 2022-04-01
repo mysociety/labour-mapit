@@ -1,0 +1,15 @@
+{% extends "mapit/base.html" %}
+{% load i18n %}
+
+{% block title %}Import branches from CSV{% endblock title %}
+
+{% block content %}
+
+<h2>Import branches from CSV</h2>
+
+<form action="{% url "mapit_labour-import_csv" %}" method="post" enctype="multipart/form-data">
+    {% csrf_token %}
+    {{ form }}
+    <input type="submit" value="Submit">
+</form>
+{% endblock %}
