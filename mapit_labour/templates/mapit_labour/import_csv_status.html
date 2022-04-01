@@ -1,0 +1,38 @@
+{% extends "mapit/base.html" %}
+{% load i18n %}
+
+{% block title %}Import branches from CSV - task status{% endblock title %}
+
+{% block content %}
+
+<h2>Import branches from CSV</h2>
+
+{% if task and task.success %}
+    {% if task.result.error %}
+        <h3>Import failed</h3>
+        <p>{{ task.result.error }}</p>
+    {% else %}
+        <h3>Import finished</h3>
+        <dl>
+            <dt>Created:</dt>
+            <dd>{{ task.result.created }}</dd>
+            <dt>Updated:</dt>
+            <dd>{{ task.result.updated }}</dd>
+            
+            {% if task.result.warnings %}
+                <dt>{{ task.result.warnings|length }} warning{{ task.result.warnings|pluralize:"s" }}</dt>
+                <dd>
+                    <ul>
+                        {% for warning in task.result.warnings %}
+                            <li>{{ warning }}</li>
+                        {% endfor %}
+                    </ul>
+                </dd>
+            {% endif %}
+    {% endif %}
+{% elif queued %}
+    <h3>Import is being processed</h3>
+{% else %}
+    <p>Error</p>
+{% endif %}
+{% endblock %}

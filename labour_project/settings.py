@@ -282,3 +282,5 @@ Q_CLUSTER = {
     'max_attempts': 3,
     'orm': 'default',
 }
+
+CSV_UPLOAD_DIR = os.path.join(PARENT_DIR, "uploads", "csvs")

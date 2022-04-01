@@ -1,9 +1,13 @@
 import itertools
 from logging import getLogger
+from pprint import pformat
 
 from django.http.response import HttpResponse, HttpResponseRedirect
 from django.shortcuts import render
 from django.conf import settings
+
+from django_q.tasks import fetch
+from django_q.models import OrmQ
 
 from mapit.shortcuts import output_json, get_object_or_404
 from mapit.models import Generation, Area
@@ -11,7 +15,7 @@ from mapit.views.postcodes import add_codes, enclosing_areas
 from mapit.middleware import ViewException
 
 from .models import UPRN
-from .forms import BranchUploadForm
+from .forms import ImportCSVForm
 
 logger = getLogger(__name__)
 
@@ -135,12 +139,29 @@ def health_check(request):
     return HttpResponse("Everything OK")
 
 
-def branches_upload(request):
+def import_csv(request):
     if request.method == "POST":
-        form = BranchUploadForm(request.POST, request.FILES)
+        form = ImportCSVForm(request.POST, request.FILES)
         if form.is_valid():
-            form.create_branches()
-            return HttpResponseRedirect("/success/url/")
+            task_id = form.add_import_task()
+            return HttpResponseRedirect(f"/import/csv/{task_id}")
     else:
-        form = BranchUploadForm()
-    return render(request, "mapit_labour/branches_upload.html", {"form": form})
+        form = ImportCSVForm()
+    return render(request, "mapit_labour/import_csv.html", {"form": form})
+
+
+def import_csv_status(request, task_id):
+    context = {}
+    refresh = None
+
+    if task := fetch(task_id):
+        # task has finished, resulting in success or failure
+        context["task"] = task
+    else:
+        for q in OrmQ.objects.all():
+            if q.task_id() == task_id:
+                context["queued"] = q
+                refresh = 10
+
+    response = render(request, "mapit_labour/import_csv_status.html", context)
+    return response
