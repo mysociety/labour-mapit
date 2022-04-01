@@ -1,4 +1,5 @@
 [
     { "pk": 52, "model": "mapit.type", "fields": { "code": "LBR", "description": "Labour branch" } },
+    { "pk": 53, "model": "mapit.type", "fields": { "code": "WPC", "description": "Senedd constituency" } },
     { "pk": 5, "model": "mapit.codetype", "fields": { "code": "lbr", "description": "Labour branch" } }
 ]
