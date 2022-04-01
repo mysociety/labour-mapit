@@ -29,6 +29,9 @@ DJANGO_SECRET_KEY: 'gu^&xc)hoibh3x&s+9009jbn4d$!nq0lz+syx-^x8%z24!kfs4'
 # Mapped to Django's DEBUG setting. Optional, defaults to True.
 DEBUG: True
 
+# Allow use of memcache even when DEBUG is true. Optional, defaults to False
+DEBUG_USE_MEMCACHE: False
+
 # A GA code
 GOOGLE_ANALYTICS: ""
 
