@@ -21,6 +21,7 @@ django-mapit = {git = "https://github.com/mysociety/mapit"}
 ipython = "^7.30.1"
 django-debug-toolbar = "^3.2.2"
 coverage = "^6.2"
+pudb = "^2022.1.1"
 
 [build-system]
 requires = ["poetry-core>=1.0.0"]
