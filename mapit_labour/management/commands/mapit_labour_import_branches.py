@@ -106,6 +106,8 @@ class Command(LabelCommand):
                 )
                 a.delete()
                 continue
+            has_geometry = False
+            area_area = 0  # for measuring the geographic area of this area's geometries
             for subarea in branch["subareas"]:
                 for p in subarea.polygons.all():
                     p = p.polygon
@@ -119,8 +121,18 @@ class Command(LabelCommand):
                     # Sometimes the intersection results in a MultiPolygon, which
                     # we'll need to store as separate Polygon geometries
                     if p.geom_type == "MultiPolygon":
-                        print(f"Multis for {a.id}")
+                        print(f"Multis for area {a.id} (branch {branch['area_id']})")
                         for poly in p:
                             a.polygons.create(polygon=poly)
+                            has_geometry = True
+                            area_area += poly.area
                     else:
                         a.polygons.create(polygon=p)
+                        has_geometry = True
+                        area_area += p.area
+            if not has_geometry:
+                print(f"Area {a.id} (branch {branch['area_id']}) has no geometry!")
+            elif area_area < 50000:
+                print(
+                    f"Area {a.id} (branch {branch['area_id']}) has a small geographic area ({int(area_area)} ㎡)!"
+                )
