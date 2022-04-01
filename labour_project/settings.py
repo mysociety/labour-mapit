@@ -194,6 +194,7 @@ INSTALLED_APPS = [
     'mapit_labour',
     'mapit_gb',
     'mapit',
+    'django_q',
 ]
 
 if DEBUG:
@@ -272,3 +273,12 @@ API_KEY_AUTH_ALLOWED_PATHS = [
 ]
 
 ADDRESSBASE_RESULTS_LIMIT = config.get('ADDRESSBASE_RESULTS_LIMIT', 100)
+
+Q_CLUSTER = {
+    'name': 'mapit_labour',
+    'workers': 1,
+    'timeout': 300,
+    'retry': 600,
+    'max_attempts': 3,
+    'orm': 'default',
+}
