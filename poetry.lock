@@ -278,6 +278,17 @@ optional = false
 python-versions = ">=3.5"
 
 [[package]]
+name = "pymemcache"
+version = "3.5.1"
+description = "A comprehensive, fast, pure Python memcached client"
+category = "main"
+optional = false
+python-versions = "*"
+
+[package.dependencies]
+six = "*"
+
+[[package]]
 name = "pyparsing"
 version = "3.0.7"
 description = "Python parsing module"
@@ -545,6 +556,10 @@ pudb = [
 pygments = [
     {file = "Pygments-2.10.0-py3-none-any.whl", hash = "sha256:b8e67fe6af78f492b3c4b3e2970c0624cbf08beb1e493b2c99b9fa1b67a20380"},
     {file = "Pygments-2.10.0.tar.gz", hash = "sha256:f398865f7eb6874156579fdf36bc840a03cab64d1cde9e93d68f46a425ec52c6"},
+]
+pymemcache = [
+    {file = "pymemcache-3.5.1-py2.py3-none-any.whl", hash = "sha256:91ca2afe0eff777d5f4c848affee5e469384a680a29bd6968186db940c7f56b7"},
+    {file = "pymemcache-3.5.1.tar.gz", hash = "sha256:c072a17366188294fd012a37fcb4d238e6dd27b96679982b11681c8baab6de59"},
 ]
 pyparsing = [
     {file = "pyparsing-3.0.7-py3-none-any.whl", hash = "sha256:a6c06a88f252e6c322f65faf8f418b16213b51bdfaece0524c1c1bc30c63c484"},
