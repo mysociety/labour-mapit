@@ -1,9 +1,13 @@
 import itertools
 from logging import getLogger
+from pprint import pformat
 
 from django.http.response import HttpResponse, HttpResponseRedirect
 from django.shortcuts import render
 from django.conf import settings
+
+from django_q.tasks import fetch
+from django_q.models import OrmQ
 
 from mapit.shortcuts import output_json, get_object_or_404
 from mapit.models import Generation, Area
@@ -139,8 +143,19 @@ def branches_upload(request):
     if request.method == "POST":
         form = BranchUploadForm(request.POST, request.FILES)
         if form.is_valid():
-            form.create_branches()
-            return HttpResponseRedirect("/success/url/")
+            task_id = form.add_import_task()
+            return HttpResponseRedirect(f"/branches_upload/task/{task_id}")
     else:
         form = BranchUploadForm()
     return render(request, "mapit_labour/branches_upload.html", {"form": form})
+
+
+def branches_upload_task(request, task_id):
+    task = None
+    try:
+        task = pformat(fetch(task_id).__dict__)
+    except:
+        for q in OrmQ.objects.all():
+            if q.task_id() == task_id:
+                task = pformat(q.task())
+    return render(request, "mapit_labour/branches_upload_task.html", {"task": task})
