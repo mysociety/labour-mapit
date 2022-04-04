@@ -24,6 +24,7 @@ ipython = "^7.30.1"
 django-debug-toolbar = "^3.2.2"
 coverage = "^6.2"
 pudb = "^2022.1.1"
+black = {version = "^22.3.0", allow-prereleases = true}
 
 [build-system]
 requires = ["poetry-core>=1.0.0"]
