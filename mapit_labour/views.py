@@ -152,7 +152,6 @@ def import_csv(request):
 
 def import_csv_status(request, task_id):
     context = {}
-    refresh = None
 
     if task := fetch(task_id):
         # task has finished, resulting in success or failure
@@ -161,7 +160,6 @@ def import_csv_status(request, task_id):
         for q in OrmQ.objects.all():
             if q.task_id() == task_id:
                 context["queued"] = q
-                refresh = 10
+                context["page_refresh"] = 5
 
-    response = render(request, "mapit_labour/import_csv_status.html", context)
-    return response
+    return render(request, "mapit_labour/import_csv_status.html", context)
