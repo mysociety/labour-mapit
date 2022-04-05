@@ -9,7 +9,12 @@
 
 <form action="{% url "mapit_labour-import_csv" %}" method="post" enctype="multipart/form-data">
     {% csrf_token %}
-    {{ form }}
+    {{ form.as_p }}
     <input type="submit" value="Submit">
+    <p>Limitations:</p>
+    <ol>
+        <li>Can't create a new generation yet</li>
+        <li>Can't update branches yet, only replace all existing branches</li>
+    </ol>
 </form>
 {% endblock %}
