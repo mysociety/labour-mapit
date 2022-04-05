@@ -4,6 +4,15 @@ from django.db import transaction
 
 from mapit.models import Area, Type, CodeType, Generation
 
+REQUIRED_CSV_FIELDS = {
+    "area_type",
+    "area_id",
+    "area_name",
+    "area_gss",
+    "gss_code",
+    "parent_gss_code",
+}
+
 
 class BranchCSVImporter:
     commit = False
@@ -51,12 +60,20 @@ class BranchCSVImporter:
 
         try:
             with open(self.path, encoding="utf-8-sig") as f:
-                self.handle_rows(DictReader(f))
+                reader = DictReader(f)
+                self.validate_fieldnames(reader.fieldnames)
+                self.handle_rows(reader)
         except Exception as e:
             self.error = str(e)
 
         if not self.commit:
             transaction.set_rollback(True)
+
+    def validate_fieldnames(self, fieldnames):
+        if not set(fieldnames) >= REQUIRED_CSV_FIELDS:
+            raise Exception(
+                f"Invalid CSV header. Required fields are: {', '.join(REQUIRED_CSV_FIELDS)}"
+            )
 
     def validate_row(self, row: dict, branch: dict):
         for k, v in row.items():
