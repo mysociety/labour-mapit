@@ -1,0 +1,6 @@
+#!/bin/bash
+
+# check that we are in the expected directory
+cd `dirname $0`/..
+
+poetry run python manage.py qcluster $@
