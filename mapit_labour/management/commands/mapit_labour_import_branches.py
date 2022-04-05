@@ -1,4 +1,4 @@
-from django.core.management.base import LabelCommand
+from django.core.management.base import LabelCommand, CommandError
 
 from mapit_labour.importers import BranchCSVImporter
 
@@ -25,6 +25,12 @@ class Command(LabelCommand):
         )
 
     def handle_label(self, label: str, **options):
-        BranchCSVImporter.import_from_csv(
-            label, purge=options["purge"], commit=options["commit"]
+        result = BranchCSVImporter.import_from_csv(
+            label, purge=options["purge"], commit=options["commit"], generation=None
         )
+        if result["error"]:
+            raise CommandError(result["error"])
+        print(f"Created: {result['created']}\nUpdated: {result['updated']}")
+        if result["warnings"]:
+            print(f"Warnings: {len(result['warnings'])}")
+            print("\n".join(result["warnings"]))
