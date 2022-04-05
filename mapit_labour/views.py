@@ -5,6 +5,8 @@ from pprint import pformat
 from django.http.response import HttpResponse, HttpResponseRedirect
 from django.shortcuts import render
 from django.conf import settings
+from django.utils.cache import add_never_cache_headers
+from django.http import Http404
 
 from django_q.tasks import fetch
 from django_q.models import OrmQ
@@ -152,6 +154,7 @@ def import_csv(request):
 
 def import_csv_status(request, task_id):
     context = {}
+    allow_cache = True
 
     if task := fetch(task_id):
         # task has finished, resulting in success or failure
@@ -161,5 +164,11 @@ def import_csv_status(request, task_id):
             if q.task_id() == task_id:
                 context["queued"] = q
                 context["page_refresh"] = 5
-
-    return render(request, "mapit_labour/import_csv_status.html", context)
+                allow_cache = False
+                break
+        else:
+            raise Http404
+    response = render(request, "mapit_labour/import_csv_status.html", context)
+    if not allow_cache:
+        add_never_cache_headers(response)
+    return response
