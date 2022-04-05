@@ -4,4 +4,8 @@
 
 {% block extra_css %}
 <link href="{% static "mapit_labour/css/mapit_labour.css" %}" rel="stylesheet">
+
+{% if page_refresh %}
+    <meta http-equiv="refresh" content="{{ page_refresh }}">
+{% endif %}
 {% endblock %}
