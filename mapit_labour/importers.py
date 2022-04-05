@@ -105,7 +105,7 @@ class BranchCSVImporter:
                 raise ValueError(f"Invalid row on line {i}: {e}")
             try:
                 branch["subareas"].append(
-                    Area.objects.get(
+                    Area.objects.prefetch_related("polygons").get(
                         codes__type=gss_codetype, codes__code=row["gss_code"]
                     )
                 )
@@ -130,7 +130,7 @@ class BranchCSVImporter:
                 type=lbr_codetype, defaults={"code": branch["area_id"]}
             )
             try:
-                a.parent_area = Area.objects.get(
+                a.parent_area = Area.objects.prefetch_related("polygons").get(
                     codes__type=gss_codetype, codes__code=branch["parent_gss_code"]
                 )
                 a.save()
