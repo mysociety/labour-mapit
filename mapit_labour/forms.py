@@ -9,7 +9,7 @@ from django_q.tasks import async_task
 from mapit_labour.importers import BranchCSVImporter
 
 
-class BranchUploadForm(forms.Form):
+class ImportCSVForm(forms.Form):
     file = forms.FileField(required=True, allow_empty_file=False)
     commit = forms.BooleanField(initial=False, required=False)
     purge = forms.BooleanField(initial=True, required=False)
