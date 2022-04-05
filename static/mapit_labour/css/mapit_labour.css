@@ -1,3 +1,10 @@
 .site-header {
     background-color: #e4003b;
 }
+
+.helptext {
+    display: block;
+    font-size: 0.75em;
+    font-style: italic;
+    color: gray;
+}

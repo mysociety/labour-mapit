@@ -13,10 +13,11 @@
         <p>{{ task.result.error }}</p>
     {% else %}
         <h3>Import finished</h3>
+        <a href="/areas/LBR.html">View area list</a>
         <dl>
-            <dt>Created:</dt>
+            <dt>Created:{% if not task.kwargs.commit %} (not committed){% endif %}</dt>
             <dd>{{ task.result.created }}</dd>
-            <dt>Updated:</dt>
+            <dt>Updated:{% if not task.kwargs.commit %} (not committed){% endif %}</dt>
             <dd>{{ task.result.updated }}</dd>
             
             {% if task.result.warnings %}
@@ -31,8 +32,11 @@
             {% endif %}
     {% endif %}
 {% elif queued %}
-    <h3>Import is being processed</h3>
+    <h3>Import is being processed, please wait...</h3>
+    <p>This page will reload automatically when the import has finished.</p>
 {% else %}
     <p>Error</p>
+
+
 {% endif %}
 {% endblock %}
