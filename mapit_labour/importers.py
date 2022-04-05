@@ -156,9 +156,6 @@ class BranchCSVImporter:
                     # Sometimes the intersection results in a MultiPolygon, which
                     # we'll need to store as separate Polygon geometries
                     if p.geom_type == "MultiPolygon":
-                        self.warnings.append(
-                            f"Multis for area {a.id} (branch {branch['area_id']})"
-                        )
                         for poly in p:
                             a.polygons.create(polygon=poly)
                             has_geometry = True
@@ -169,9 +166,9 @@ class BranchCSVImporter:
                         area_area += p.area
             if not has_geometry:
                 self.warnings.append(
-                    f"Area {a.id} (branch {branch['area_id']}) has no geometry!"
+                    f"Area {a.id} (branch {branch['area_id']}) has no geometry"
                 )
             elif area_area < 50000:
                 self.warnings.append(
-                    f"Area {a.id} (branch {branch['area_id']}) has a small geographic area ({int(area_area)} ㎡)!"
+                    f"Area {a.id} (branch {branch['area_id']}) has a small geographic area ({int(area_area)} ㎡)"
                 )
