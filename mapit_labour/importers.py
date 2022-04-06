@@ -97,6 +97,7 @@ class BranchCSVImporter:
         lbr_codetype = CodeType.objects.get(code="lbr")
 
         branches = {}
+        parent_gss_codes = set()
         for i, row in enumerate(csv, start=2):
             branch = branches.setdefault(row["area_gss"], {**row, "subareas": []})
             try:
@@ -113,8 +114,14 @@ class BranchCSVImporter:
                 self.warnings.append(
                     f"Invalid row on line {i}: Subarea with GSS code '{row['gss_code']}' doesn't exist."
                 )
+            parent_gss_codes.add(row["parent_gss_code"])
+
+        parents = self._load_parents(parent_gss_codes)
 
         for branch in branches.values():
+            parent_area = parents.get(branch["parent_gss_code"])
+            if not parent_area:
+                continue
             # TODO handle updating existing branches
             a = Area.objects.create(
                 name=branch["area_name"],
@@ -122,25 +129,15 @@ class BranchCSVImporter:
                 # XXX do the right thing with generations
                 generation_high=self.generation,
                 generation_low=self.generation,
+                parent_area=parent_area,
             )
+            self.created += 1
             a.codes.update_or_create(
                 type=gss_codetype, defaults={"code": branch["area_gss"]}
             )
             a.codes.update_or_create(
                 type=lbr_codetype, defaults={"code": branch["area_id"]}
             )
-            try:
-                a.parent_area = Area.objects.prefetch_related("polygons").get(
-                    codes__type=gss_codetype, codes__code=branch["parent_gss_code"]
-                )
-                a.save()
-                self.created += 1
-            except Area.DoesNotExist:
-                self.warnings.append(
-                    f"Parent area with GSS code '{branch['parent_gss_code']}' does not exist."
-                )
-                a.delete()
-                continue
             has_geometry = False
             area_area = 0  # for measuring the geographic area of this area's geometries
             for subarea in branch["subareas"]:
@@ -172,3 +169,20 @@ class BranchCSVImporter:
                 self.warnings.append(
                     f"Area {a.id} (branch {branch['area_id']}) has a small geographic area ({int(area_area)} ㎡)"
                 )
+
+    def _load_parents(self, gss_codes):
+        gss_codetype = CodeType.objects.get(code="gss")
+
+        parents = {}
+        for area in Area.objects.prefetch_related("polygons").filter(
+            codes__type=gss_codetype, codes__code__in=gss_codes
+        ):
+            parents[area.codes.get(type=gss_codetype).code] = area
+
+        for gss_code in gss_codes:
+            if not parents.get(gss_code):
+                self.warnings.append(
+                    f"Parent area with GSS code '{gss_code}' does not exist."
+                )
+
+        return parents
