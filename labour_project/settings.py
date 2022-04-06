@@ -202,6 +202,8 @@ INSTALLED_APPS = [
     'mapit_gb',
     'mapit',
     'django_q',
+    'crispy_forms',
+    'crispy_forms_gds',
 ]
 
 if DEBUG:
@@ -291,3 +293,6 @@ Q_CLUSTER = {
 }
 
 CSV_UPLOAD_DIR = os.path.join(PARENT_DIR, "uploads", "csvs")
+
+CRISPY_ALLOWED_TEMPLATE_PACKS = ["gds"]
+CRISPY_TEMPLATE_PACK = "gds"

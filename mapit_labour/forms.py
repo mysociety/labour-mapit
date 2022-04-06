@@ -5,6 +5,9 @@ from django import forms
 from django.conf import settings
 
 from django_q.tasks import async_task
+from crispy_forms_gds.helper import FormHelper
+from crispy_forms_gds.layout import Submit
+
 
 from mapit.models import Generation
 
@@ -35,6 +38,11 @@ class ImportCSVForm(forms.Form):
     generation = forms.Field(
         widget=forms.HiddenInput, initial=lambda: get_generation_choices()[0][0]
     )
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.helper = FormHelper()
+        self.helper.add_input(Submit("submit", "Submit"))
 
     def add_import_task(self):
         data = self.cleaned_data
