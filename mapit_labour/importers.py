@@ -5,6 +5,8 @@ from django.contrib.gis.geos import MultiPolygon
 
 from mapit.models import Area, Type, CodeType, Generation
 
+from .models import CSVImportTaskProgress
+
 REQUIRED_CSV_FIELDS = {
     "area_type",
     "area_id",
@@ -26,7 +28,11 @@ class BranchCSVImporter:
     warnings = None
     error = None
 
-    def __init__(self, path, purge=False, commit=False, generation=None):
+    progress = None
+
+    def __init__(
+        self, path, purge=False, commit=False, generation=None, progress_id=None
+    ):
         self.path = path
         self.purge = purge
         self.commit = commit
@@ -39,12 +45,22 @@ class BranchCSVImporter:
             except Generation.DoesNotExist:
                 raise ValueError("Invalid generation number specified")
 
+        if progress_id:
+            try:
+                self.progress = CSVImportTaskProgress.objects.get(id=progress_id)
+            except CSVImportTaskProgress.DoesNotExist:
+                pass
+
         self.warnings = []
 
     @classmethod
-    def import_from_csv(cls, path, purge, commit, generation):
+    def import_from_csv(cls, path, purge, commit, generation, progress_id=None):
         importer = BranchCSVImporter(
-            path, purge=purge, commit=commit, generation=generation
+            path,
+            purge=purge,
+            commit=commit,
+            generation=generation,
+            progress_id=progress_id,
         )
         importer.do_import()
         return {
@@ -69,6 +85,16 @@ class BranchCSVImporter:
 
         if not self.commit:
             transaction.set_rollback(True)
+
+    def update_progress(self, msg):
+        if not self.progress:
+            return
+
+        self.progress.progress = msg
+        # Use the second DB connection as we're in a transaction on the
+        # default connection so changes to the CSVImportTaskProgress model
+        # won't be persisted.
+        self.progress.save(using="logging")
 
     def validate_fieldnames(self, fieldnames):
         if not set(fieldnames) >= REQUIRED_CSV_FIELDS:
@@ -118,7 +144,9 @@ class BranchCSVImporter:
             parent_gss_codes.add(row["parent_gss_code"])
 
         parents = self._load_parents(parent_gss_codes)
-        for branch in branches.values():
+        branch_count = len(branches)
+        for i, branch in enumerate(branches.values(), start=1):
+            self.update_progress(f"Working on branch {i} of {branch_count}")
             parent_area = parents.get(branch["parent_gss_code"])
             if not parent_area:
                 continue

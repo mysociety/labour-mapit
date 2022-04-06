@@ -84,6 +84,11 @@ class APIKey(models.Model):
         return "".join(random.choice(chars) for x in range(size))
 
 
+class CSVImportTaskProgress(models.Model):
+    task_id = models.CharField(max_length=64, null=True)
+    progress = models.TextField(null=True)
+
+
 @receiver(models.signals.post_save)
 def create_key_for_new_user(sender, **kwargs):
     """Create a new APIKey for a user who just signed up."""
