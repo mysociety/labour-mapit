@@ -16,7 +16,7 @@ from mapit.models import Generation, Area
 from mapit.views.postcodes import add_codes, enclosing_areas
 from mapit.middleware import ViewException
 
-from .models import UPRN
+from .models import UPRN, CSVImportTaskProgress
 from .forms import ImportCSVForm
 
 logger = getLogger(__name__)
@@ -163,6 +163,12 @@ def import_csv_status(request, task_id):
         for q in OrmQ.objects.all():
             if q.task_id() == task_id:
                 context["queued"] = q
+                try:
+                    context["progress"] = CSVImportTaskProgress.objects.get(
+                        task_id=task_id
+                    )
+                except CSVImportTaskProgress.DoesNotExist:
+                    pass
                 allow_cache = False
                 break
         else:

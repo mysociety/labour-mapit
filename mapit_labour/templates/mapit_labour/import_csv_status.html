@@ -35,6 +35,9 @@
 {% elif queued %}
     <h3>Import is being processed, please wait...</h3>
     <p>This page will reload automatically when the import has finished.</p>
+    {% if progress and progress.progress %}
+        <p>{{ progress.progress }}</p>
+    {% endif %}
 {% else %}
     <p>Error</p>
 {% endif %}
