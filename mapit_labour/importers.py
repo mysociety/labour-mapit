@@ -140,14 +140,15 @@ class BranchCSVImporter:
             )
             has_geometry = False
             area_area = 0  # for measuring the geographic area of this area's geometries
+            parent_polys = [p.polygon for p in a.parent_area.polygons.all()]
             for subarea in branch["subareas"]:
                 for p in subarea.polygons.all():
                     p = p.polygon
-                    for parent_poly in a.parent_area.polygons.all():
+                    for parent_poly in parent_polys:
                         # buffering by zero will remove any non-polygon geometries
                         # (e.g. LineStrings/MultiLineStrings where the subarea only borders
                         # the parent geometry but doesn't actually overlap)
-                        p = p.intersection(parent_poly.polygon).buffer(0.0)
+                        p = p.intersection(parent_poly).buffer(0.0)
                     if p.empty:
                         continue
                     # Sometimes the intersection results in a MultiPolygon, which
@@ -163,7 +164,7 @@ class BranchCSVImporter:
                         area_area += p.area
             if not has_geometry:
                 self.warnings.append(
-                    f"Area {a.id} (branch {branch['area_id']}) has no geometry"
+                    f"Area {a.id} (branch {branch['area_id']}) didn't overlap with parent area ({branch['parent_gss_code']})"
                 )
             elif area_area < 50000:
                 self.warnings.append(
