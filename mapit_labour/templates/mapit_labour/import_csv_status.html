@@ -7,6 +7,7 @@
 
 <h2>Import branches from CSV</h2>
 
+<div id="taskStatus"{% if queued %} hx-get="{% url "mapit_labour-import_csv_status" queued.task_id %}" hx-trigger="every 5s" hx-swap="outerHTML" hx-select="#taskStatus"{% endif %}>
 {% if task and task.success %}
     {% if task.result.error %}
         <h3>Import failed</h3>
@@ -21,7 +22,7 @@
             <dd>{{ task.result.updated }}</dd>
             
             {% if task.result.warnings %}
-                <dt>{{ task.result.warnings|length }} warning{{ task.result.warnings|pluralize:"s" }}</dt>
+                <dt>{{ task.result.warnings|length }} warning{{ task.result.warnings|pluralize:"s" }}:</dt>
                 <dd>
                     <ul>
                         {% for warning in task.result.warnings %}
@@ -36,7 +37,7 @@
     <p>This page will reload automatically when the import has finished.</p>
 {% else %}
     <p>Error</p>
-
-
 {% endif %}
+</div>
+
 {% endblock %}

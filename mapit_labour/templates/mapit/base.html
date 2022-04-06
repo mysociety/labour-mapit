@@ -7,7 +7,5 @@
 <link href="{% static "vendor/govuk-frontend/forms.css" %}" rel="stylesheet">
 <link href="{% static "vendor/govuk-frontend/radios.css" %}" rel="stylesheet">
 
-{% if page_refresh %}
-    <meta http-equiv="refresh" content="{{ page_refresh }}">
-{% endif %}
+<script src="{% static "vendor/htmx.min.js" %}"></script>
 {% endblock %}
