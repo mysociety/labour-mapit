@@ -1,6 +1,7 @@
 from csv import DictReader
 
 from django.db import transaction
+from django.contrib.gis.geos import MultiPolygon
 
 from mapit.models import Area, Type, CodeType, Generation
 
@@ -117,7 +118,6 @@ class BranchCSVImporter:
             parent_gss_codes.add(row["parent_gss_code"])
 
         parents = self._load_parents(parent_gss_codes)
-
         for branch in branches.values():
             parent_area = parents.get(branch["parent_gss_code"])
             if not parent_area:
@@ -140,28 +140,33 @@ class BranchCSVImporter:
             )
             has_geometry = False
             area_area = 0  # for measuring the geographic area of this area's geometries
-            parent_polys = [p.polygon for p in a.parent_area.polygons.all()]
+
+            # gather all the geometries for the parent area and all subareas into two
+            # MultiPolygons, then intersect them in one go
+            parent_multi = MultiPolygon(
+                [p.polygon for p in a.parent_area.polygons.all()]
+            )
+            subs_polys = []
             for subarea in branch["subareas"]:
-                for p in subarea.polygons.all():
-                    p = p.polygon
-                    for parent_poly in parent_polys:
-                        # buffering by zero will remove any non-polygon geometries
-                        # (e.g. LineStrings/MultiLineStrings where the subarea only borders
-                        # the parent geometry but doesn't actually overlap)
-                        p = p.intersection(parent_poly).buffer(0.0)
-                    if p.empty:
-                        continue
-                    # Sometimes the intersection results in a MultiPolygon, which
-                    # we'll need to store as separate Polygon geometries
-                    if p.geom_type == "MultiPolygon":
-                        for poly in p:
-                            a.polygons.create(polygon=poly)
-                            has_geometry = True
-                            area_area += poly.area
-                    else:
-                        a.polygons.create(polygon=p)
+                subs_polys.extend((p.polygon for p in subarea.polygons.all()))
+            subs_multi = MultiPolygon(subs_polys)
+            branch_poly = parent_multi.intersection(subs_multi)
+            # buffering by zero will remove any non-polygon geometries
+            # (e.g. LineStrings/MultiLineStrings where the subarea only borders
+            # the parent geometry but doesn't actually overlap)
+            branch_poly = branch_poly.buffer(0.0)
+            if not branch_poly.empty:
+                # Sometimes the intersection results in a MultiPolygon, which
+                # we'll need to store as separate Polygon geometries
+                if branch_poly.geom_type == "MultiPolygon":
+                    for poly in branch_poly:
+                        a.polygons.create(polygon=poly)
                         has_geometry = True
-                        area_area += p.area
+                        area_area += poly.area
+                else:
+                    a.polygons.create(polygon=branch_poly)
+                    has_geometry = True
+                    area_area += branch_poly.area
             if not has_geometry:
                 self.warnings.append(
                     f"Area {a.id} (branch {branch['area_id']}) didn't overlap with parent area ({branch['parent_gss_code']})"
