@@ -31,7 +31,13 @@ class BranchCSVImporter:
     progress = None
 
     def __init__(
-        self, path, purge=False, commit=False, generation=None, progress_id=None
+        self,
+        path,
+        purge=False,
+        commit=False,
+        generation=None,
+        generation_description=None,
+        progress_id=None,
     ):
         self.path = path
         self.purge = purge
@@ -39,9 +45,13 @@ class BranchCSVImporter:
 
         if not generation:
             self.generation = Generation.objects.current()
+        elif generation == "new":
+            self.generation = Generation.objects.create(
+                description=generation_description
+            )
         else:
             try:
-                self.generation = Generation.objects.get(generation)
+                self.generation = Generation.objects.get(id=int(generation))
             except Generation.DoesNotExist:
                 raise ValueError("Invalid generation number specified")
 
@@ -54,12 +64,21 @@ class BranchCSVImporter:
         self.warnings = []
 
     @classmethod
-    def import_from_csv(cls, path, purge, commit, generation, progress_id=None):
+    def import_from_csv(
+        cls,
+        path,
+        purge,
+        commit,
+        generation,
+        generation_description=None,
+        progress_id=None,
+    ):
         importer = BranchCSVImporter(
             path,
             purge=purge,
             commit=commit,
             generation=generation,
+            generation_description=generation_description,
             progress_id=progress_id,
         )
         importer.do_import()
