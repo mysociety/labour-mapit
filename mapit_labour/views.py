@@ -163,7 +163,6 @@ def import_csv_status(request, task_id):
         for q in OrmQ.objects.all():
             if q.task_id() == task_id:
                 context["queued"] = q
-                context["page_refresh"] = 5
                 allow_cache = False
                 break
         else:
