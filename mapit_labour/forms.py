@@ -12,6 +12,7 @@ from crispy_forms_gds.layout import Submit
 from mapit.models import Generation
 
 from mapit_labour.importers import BranchCSVImporter
+from .models import CSVImportTaskProgress
 
 
 def get_generation_choices():
@@ -45,6 +46,7 @@ class ImportCSVForm(forms.Form):
         self.helper.add_input(Submit("submit", "Submit"))
 
     def add_import_task(self):
+        progress = CSVImportTaskProgress.objects.create(progress="Waiting to start...")
         data = self.cleaned_data
         task_id = async_task(
             BranchCSVImporter.import_from_csv,
@@ -52,7 +54,10 @@ class ImportCSVForm(forms.Form):
             commit=data["commit"],
             purge=data["purge"],
             generation=None,
+            progress_id=progress.id,
         )
+        progress.task_id = task_id
+        progress.save()
         return task_id
 
     def copy_csv(self, src):
