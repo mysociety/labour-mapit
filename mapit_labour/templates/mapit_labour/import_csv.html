@@ -10,9 +10,5 @@
 <form action="{% url "mapit_labour-import_csv" %}" method="post" enctype="multipart/form-data">
     {% csrf_token %}
     {% crispy form %}
-    <p>Limitations:</p>
-    <ol>
-        <li>Can't create a new generation yet</li>
-    </ol>
 </form>
 {% endblock %}

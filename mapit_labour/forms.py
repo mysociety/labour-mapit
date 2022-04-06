@@ -16,8 +16,16 @@ from .models import CSVImportTaskProgress
 
 
 def get_generation_choices():
-    g = Generation.objects.current()
-    return [(g.id, f"{g.id}: {g.description}")]
+    choices = []
+    if current := Generation.objects.current():
+        choices.append((current.id, f"{current.id}: {current.description}"))
+
+    if new := Generation.objects.new():
+        choices.append((new.id, f"{new.id}: {new.description}"))
+    else:
+        choices.append(("new", "-- create new generation --"))
+
+    return choices
 
 
 class ImportCSVForm(forms.Form):
@@ -30,14 +38,14 @@ class ImportCSVForm(forms.Form):
     purge = forms.BooleanField(
         initial=False, required=False, label="Delete existing areas"
     )
-    generation_choice = forms.ChoiceField(
+    generation = forms.ChoiceField(
         choices=get_generation_choices,
-        disabled=True,
-        required=False,
+        required=True,
         label="Generation",
     )
-    generation = forms.Field(
-        widget=forms.HiddenInput, initial=lambda: get_generation_choices()[0][0]
+    generation_description = forms.CharField(
+        required=False,
+        label="New generation description",
     )
 
     def __init__(self, *args, **kwargs):
@@ -53,12 +61,20 @@ class ImportCSVForm(forms.Form):
             path=self.copy_csv(data["file"]),
             commit=data["commit"],
             purge=data["purge"],
-            generation=None,
+            generation=data["generation"],
+            generation_description=data["generation_description"],
             progress_id=progress.id,
         )
         progress.task_id = task_id
         progress.save()
         return task_id
+
+    def clean(self):
+        cleaned_data = super().clean()
+        if cleaned_data["generation"] == "new" and not cleaned_data.get(
+            "generation_description"
+        ):
+            self.add_error("generation_description", "Please provide a description")
 
     def copy_csv(self, src):
         os.makedirs(settings.CSV_UPLOAD_DIR, exist_ok=True)
