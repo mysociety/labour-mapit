@@ -4,6 +4,8 @@
 
 {% block extra_css %}
 <link href="{% static "mapit_labour/css/mapit_labour.css" %}" rel="stylesheet">
+<link href="{% static "vendor/govuk-frontend/forms.css" %}" rel="stylesheet">
+<link href="{% static "vendor/govuk-frontend/radios.css" %}" rel="stylesheet">
 
 {% if page_refresh %}
     <meta http-equiv="refresh" content="{{ page_refresh }}">
