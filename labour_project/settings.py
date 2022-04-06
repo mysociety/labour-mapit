@@ -84,6 +84,16 @@ DATABASES = {
         'PASSWORD': config.get('MAPIT_DB_PASS', ''),
         'HOST': config.get('MAPIT_DB_HOST', ''),
         'PORT': config.get('MAPIT_DB_PORT', ''),
+    },
+    # Have a second connection to the database so we can log
+    # progress of CSV import jobs that are occuring in transactions.
+    'logging': {
+        'ENGINE': 'django.contrib.gis.db.backends.postgis',
+        'NAME': config.get('MAPIT_DB_NAME', 'mapit'),
+        'USER': config.get('MAPIT_DB_USER', 'mapit'),
+        'PASSWORD': config.get('MAPIT_DB_PASS', ''),
+        'HOST': config.get('MAPIT_DB_HOST', ''),
+        'PORT': config.get('MAPIT_DB_PORT', ''),
     }
 }
 
