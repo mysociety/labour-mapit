@@ -28,7 +28,7 @@ class ImportCSVForm(forms.Form):
         help_text="Leave unticked to do a dry-run and not change the database.",
     )
     purge = forms.BooleanField(
-        initial=True, required=False, label="Replace existing areas", disabled=True
+        initial=False, required=False, label="Delete existing areas"
     )
     generation_choice = forms.ChoiceField(
         choices=get_generation_choices,
