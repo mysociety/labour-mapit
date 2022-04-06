@@ -122,6 +122,7 @@ class BranchCSVImporter:
     def handle_rows(self, csv: DictReader):
         gss_codetype = CodeType.objects.get(code="gss")
         lbr_codetype = CodeType.objects.get(code="lbr")
+        lbr_areatype = Type.objects.get(code="LBR")
 
         branches = {}
         parent_gss_codes = set()
@@ -150,16 +151,36 @@ class BranchCSVImporter:
             parent_area = parents.get(branch["parent_gss_code"])
             if not parent_area:
                 continue
-            # TODO handle updating existing branches
-            a = Area.objects.create(
-                name=branch["area_name"],
-                type=Type.objects.get(code=branch["area_type"]),
+
+            try:
+                if self.purge:
+                    # save a DB query if we know it's not going to be there
+                    raise Area.DoesNotExist
+                a = Area.objects.get(
+                    codes__type=gss_codetype, codes__code=branch["area_gss"]
+                )
+                a.name = branch["area_name"]
                 # XXX do the right thing with generations
-                generation_high=self.generation,
-                generation_low=self.generation,
-                parent_area=parent_area,
-            )
-            self.created += 1
+                a.generation_high = self.generation
+                if a.parent_area != parent_area:
+                    self.warnings.append(f"Branch {branch['area_id']} changed parent")
+                    a.parent_area = parent_area
+                a.save()
+                # XXX probably don't want to delete them all here, instead
+                # need to somehow check if they've changed and if so
+                # create a brand new area in the current generation
+                a.polygons.all().delete()
+                self.updated += 1
+            except Area.DoesNotExist:
+                a = Area.objects.create(
+                    name=branch["area_name"],
+                    type=lbr_areatype,
+                    generation_high=self.generation,
+                    generation_low=self.generation,
+                    parent_area=parent_area,
+                )
+                self.created += 1
+
             a.codes.update_or_create(
                 type=gss_codetype, defaults={"code": branch["area_gss"]}
             )
