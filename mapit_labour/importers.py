@@ -237,8 +237,9 @@ class BranchCSVImporter:
                     area_area += branch_poly.area
             if not has_geometry:
                 self.warnings.append(
-                    f"Area {a.id} (branch {branch['area_id']}) didn't overlap with parent area ({branch['parent_gss_code']})"
+                    f"Branch {branch['area_id']} doesn't overlap with parent area ({branch['parent_gss_code']}), not creating."
                 )
+                a.delete()
             elif area_area < 50000:
                 self.warnings.append(
                     f"Area {a.id} (branch {branch['area_id']}) has a small geographic area ({int(area_area)} ㎡)"
