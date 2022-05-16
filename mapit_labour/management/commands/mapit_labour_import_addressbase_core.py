@@ -1,6 +1,9 @@
 from itertools import groupby, islice
 from typing import Dict
 from collections import deque
+from contextlib import contextmanager
+import gzip
+import bz2
 
 from django.conf import settings
 from django.core.management.base import LabelCommand
@@ -28,6 +31,21 @@ def batched(iterable, size):
         (g for _, g in item)
         for _, item in groupby(enumerate(iterable), key=lambda x: x[0] // size)
     )
+
+
+@contextmanager
+def open_compressed_maybe(path, **kwargs):
+    """
+    Helper function to abstract away opening a file that may be GZip, BZ2 or
+    uncompressed.
+    """
+    openers = {
+        "gz": gzip.open,
+        "bz2": bz2.open,
+    }
+    opener = openers.get(path.split(".")[-1], open)
+    with opener(path, **kwargs) as f:
+        yield f
 
 
 class Command(LabelCommand):
@@ -68,7 +86,7 @@ class Command(LabelCommand):
         self.batch_size = options["batch_size"]
         self.limit = options["limit"]
 
-        with open(label, encoding="utf-8-sig") as f:
+        with open_compressed_maybe(label, mode="rt", encoding="utf-8-sig") as f:
             self.handle_rows(DictReader(f))
 
     def handle(self, *args, **kwargs):
