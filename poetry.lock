@@ -195,8 +195,8 @@ uk-postcode-utils = "*"
 [package.source]
 type = "git"
 url = "https://github.com/mysociety/mapit"
-reference = "master"
-resolved_reference = "5bfd03cdddf9627001e1f915b2dd2abd7ef6083b"
+reference = "import_ced_gss_codes"
+resolved_reference = "55c59f2a3cc6d61ff7da9bfb29624e1bcf9e5cf5"
 
 [[package]]
 name = "django-picklefield"
@@ -589,7 +589,7 @@ python-versions = "*"
 [metadata]
 lock-version = "1.1"
 python-versions = "^3.8"
-content-hash = "ae3ddfed26e5490100749b10293a33ae7949a73fd25211826be4dccf6a54af27"
+content-hash = "c2b3c8bf5fd606c3555b0eb8afd46c709af88541907d2847dd36f63ff00bb1ef"
 
 [metadata.files]
 ansicon = [
