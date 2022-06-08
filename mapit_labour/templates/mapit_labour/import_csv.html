@@ -1,11 +1,11 @@
 {% extends "mapit/base.html" %}
 {% load i18n crispy_forms_tags %}
 
-{% block title %}Import branches from CSV{% endblock title %}
+{% block title %}Import branches/regions from CSV{% endblock title %}
 
 {% block content %}
 
-<h2>Import branches from CSV</h2>
+<h2>Import branches/regions from CSV</h2>
 
 <form action="{% url "mapit_labour-import_csv" %}" method="post" enctype="multipart/form-data">
     {% csrf_token %}

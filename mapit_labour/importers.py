@@ -16,6 +16,10 @@ REQUIRED_CSV_FIELDS = {
     "parent_gss_code",
 }
 
+BRANCH_CODE = "LBR"
+REGION_CODE = "LR"
+VALID_CODES = {BRANCH_CODE, REGION_CODE}
+
 
 class BranchCSVImporter:
     commit = False
@@ -92,7 +96,7 @@ class BranchCSVImporter:
     @transaction.atomic
     def do_import(self):
         if self.purge:
-            Area.objects.filter(type__code="LBR").delete()
+            Area.objects.filter(type__code__in=VALID_CODES).delete()
 
         try:
             with open(self.path, encoding="utf-8-sig") as f:
@@ -122,14 +126,19 @@ class BranchCSVImporter:
             )
 
     def validate_row(self, row: dict, branch: dict):
-        for k, v in row.items():
-            # every field must have a value
-            if not v:
-                raise ValueError(f"Value for field {k} is missing")
-        if row["area_type"] != "LBR":
+        if row["area_type"] not in VALID_CODES:
             raise ValueError(
-                f"Field area_type has an invalid value ('{row['area_type']}'), must be 'LBR'"
+                f"Field area_type has an invalid value ('{row['area_type']}'), must be one of: {', '.join(VALID_CODES)}"
             )
+        for k, v in row.items():
+            # every field must have a value (except LR areas - they must have an empty parent_gss_code)
+            if k == "parent_gss_code" and branch["area_type"] == REGION_CODE:
+                if v:
+                    raise ValueError(
+                        f"Regions must not have a parent_gss_code specified."
+                    )
+            elif not v:
+                raise ValueError(f"Value for field {k} is missing")
         for key in ["parent_gss_code", "area_id", "area_name"]:
             # check that this row's common fields are consistent with
             # previous rows for this branch
@@ -140,8 +149,8 @@ class BranchCSVImporter:
 
     def handle_rows(self, csv: DictReader):
         gss_codetype = CodeType.objects.get(code="gss")
-        lbr_codetype = CodeType.objects.get(code="lbr")
-        lbr_areatype = Type.objects.get(code="LBR")
+        codetypes = {k: CodeType.objects.get(code=k.lower()) for k in VALID_CODES}
+        areatypes = {k: Type.objects.get(code=k) for k in VALID_CODES}
 
         branches = {}
         parent_gss_codes = set()
@@ -161,15 +170,14 @@ class BranchCSVImporter:
                 self.warnings.append(
                     f"Invalid row on line {i}: Subarea with GSS code '{row['gss_code']}' doesn't exist."
                 )
-            parent_gss_codes.add(row["parent_gss_code"])
+            if parent_gss_code := row["parent_gss_code"]:
+                parent_gss_codes.add(parent_gss_code)
 
         parents = self._load_parents(parent_gss_codes)
         branch_count = len(branches)
         for i, branch in enumerate(branches.values(), start=1):
-            self.update_progress(f"Working on branch {i} of {branch_count}")
+            self.update_progress(f"Working on area {i} of {branch_count}")
             parent_area = parents.get(branch["parent_gss_code"])
-            if not parent_area:
-                continue
 
             try:
                 if self.purge:
@@ -181,7 +189,7 @@ class BranchCSVImporter:
                 a.name = branch["area_name"]
                 # XXX do the right thing with generations
                 a.generation_high = self.generation
-                if a.parent_area != parent_area:
+                if parent_area and a.parent_area != parent_area:
                     self.warnings.append(f"Branch {branch['area_id']} changed parent")
                     a.parent_area = parent_area
                 a.save()
@@ -193,7 +201,7 @@ class BranchCSVImporter:
             except Area.DoesNotExist:
                 a = Area.objects.create(
                     name=branch["area_name"],
-                    type=lbr_areatype,
+                    type=areatypes[branch["area_type"]],
                     generation_high=self.generation,
                     generation_low=self.generation,
                     parent_area=parent_area,
@@ -204,28 +212,31 @@ class BranchCSVImporter:
                 type=gss_codetype, defaults={"code": branch["area_gss"]}
             )
             a.codes.update_or_create(
-                type=lbr_codetype, defaults={"code": branch["area_id"]}
+                type=codetypes[branch["area_type"]],
+                defaults={"code": branch["area_id"]},
             )
             has_geometry = False
             area_area = 0  # for measuring the geographic area of this area's geometries
 
-            # gather all the geometries for the parent area and all subareas into two
-            # MultiPolygons, then intersect them in one go
-            parent_multi = MultiPolygon(
-                [p.polygon for p in a.parent_area.polygons.all()]
-            )
+            # It's much faster to gather all the geometries for the parent area
+            # (if there is one) and all subareas into MultiPolygons and then
+            # intersect them in one go
             subs_polys = []
             for subarea in branch["subareas"]:
                 subs_polys.extend((p.polygon for p in subarea.polygons.all()))
-            subs_multi = MultiPolygon(subs_polys)
-            branch_poly = parent_multi.intersection(subs_multi)
+            branch_poly = MultiPolygon(subs_polys)
+            if parent_area:
+                parent_multi = MultiPolygon(
+                    [p.polygon for p in a.parent_area.polygons.all()]
+                )
+                branch_poly = parent_multi.intersection(branch_poly)
             # buffering by zero will remove any non-polygon geometries
             # (e.g. LineStrings/MultiLineStrings where the subarea only borders
-            # the parent geometry but doesn't actually overlap)
+            # a parent geometry but doesn't actually overlap)
             branch_poly = branch_poly.buffer(0.0)
             if not branch_poly.empty:
-                # Sometimes the intersection results in a MultiPolygon, which
-                # we'll need to store as separate Polygon geometries
+                # If the above processing results in a MultiPolygon
+                # we'll need to store it as separate Polygon geometries
                 if branch_poly.geom_type == "MultiPolygon":
                     for poly in branch_poly:
                         a.polygons.create(polygon=poly)

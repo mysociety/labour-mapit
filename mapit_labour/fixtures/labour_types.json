@@ -1,5 +1,7 @@
 [
     { "pk": 52, "model": "mapit.type", "fields": { "code": "LBR", "description": "Labour branch" } },
     { "pk": 53, "model": "mapit.type", "fields": { "code": "WPC", "description": "Senedd constituency" } },
-    { "pk": 5, "model": "mapit.codetype", "fields": { "code": "lbr", "description": "Labour branch" } }
+    { "pk": 54, "model": "mapit.type", "fields": { "code": "LR", "description": "Labour region" } },
+    { "pk": 5, "model": "mapit.codetype", "fields": { "code": "lbr", "description": "Labour branch" } },
+    { "pk": 6, "model": "mapit.codetype", "fields": { "code": "lr", "description": "Labour region" } }
 ]
