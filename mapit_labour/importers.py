@@ -146,6 +146,15 @@ class BranchCSVImporter:
                 raise ValueError(
                     f"Field {key} value ('{row[key]}') doesn’t match expected value ('{branch[key]}')"
                 )
+        # Must ensure there isn't already a non-Labour area using this GSS code
+        if (
+            Area.objects.filter(codes__code=row["area_gss"])
+            .exclude(codes__type__code__in={c.lower() for c in VALID_CODES})
+            .exists()
+        ):
+            raise ValueError(
+                f"Cannot reuse an existing GSS code for region/branch: '{row['area_gss']}'"
+            )
 
     def handle_rows(self, csv: DictReader):
         gss_codetype = CodeType.objects.get(code="gss")
