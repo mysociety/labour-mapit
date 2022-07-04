@@ -185,7 +185,7 @@ class BranchCSVImporter:
         parents = self._load_parents(parent_gss_codes)
         branch_count = len(branches)
         for i, branch in enumerate(branches.values(), start=1):
-            self.update_progress(f"Working on branch {i} of {branch_count}")
+            self.update_progress(f"Working on area {i} of {branch_count}")
             parent_area = parents.get(branch["parent_gss_code"])
 
             try:
