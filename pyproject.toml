@@ -17,9 +17,9 @@ Django = "<4"
 django-login-required-middleware = "^0.7.0"
 django-mapit = {git = "https://github.com/mysociety/mapit", rev = "import_ced_gss_codes"}
 django-q = "^1.3.9"
-pymemcache = "^3.5.1"
 django-crispy-forms = "^1.14.0"
 crispy-forms-gds = "^0.2.4"
+python-memcached = "^1.59"
 
 [tool.poetry.dev-dependencies]
 ipython = "^7.30.1"
