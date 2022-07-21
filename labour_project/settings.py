@@ -289,8 +289,8 @@ ADDRESSBASE_RESULTS_LIMIT = config.get('ADDRESSBASE_RESULTS_LIMIT', 100)
 Q_CLUSTER = {
     'name': 'mapit_labour',
     'workers': 1,
-    'timeout': 300,
-    'retry': 600,
+    'timeout': 60 * 20, # spend 20 minutes on a task before giving up
+    'retry': 60 * 25, # wait 25 minutes between attempts to start a task (i.e. tries again 5 minutes after the 20 minute timeout above)
     'max_attempts': 3,
     'orm': 'default',
 }
