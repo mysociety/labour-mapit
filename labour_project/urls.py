@@ -5,8 +5,8 @@ from django.contrib import admin
 handler500 = 'mapit.shortcuts.json_500'
 
 urlpatterns = [
-    re_path(r'^', include('mapit.urls')),
     re_path(r'^', include('mapit_labour.urls')),
+    re_path(r'^', include('mapit.urls')),
     re_path(r'^admin/', admin.site.urls),
 ]
 
