@@ -6,6 +6,7 @@ from django.http.response import HttpResponse, HttpResponseRedirect
 from django.shortcuts import render
 from django.conf import settings
 from django.utils.cache import add_never_cache_headers
+from django.urls import reverse
 from django.http import Http404
 
 from django_q.tasks import fetch
@@ -15,6 +16,7 @@ from mapit.shortcuts import output_json, get_object_or_404
 from mapit.models import Generation, Area
 from mapit.views.postcodes import add_codes, enclosing_areas
 from mapit.middleware import ViewException
+from mapit.views.areas import area as mapit_area
 
 from .models import UPRN, CSVImportTaskProgress
 from .forms import ImportCSVForm
@@ -177,3 +179,28 @@ def import_csv_status(request, task_id):
     if not allow_cache:
         add_never_cache_headers(response)
     return response
+
+
+def area(request, area_id, format=""):
+    """
+    Look for a LBR/LR Area that has this GSS code and redirect, otherwise
+    call the original MapIt view.
+    """
+    try:
+        a = (
+            Area.objects.filter(
+                codes__type__code="gss",
+                codes__code=area_id,
+                type__code__in=("LBR", "LR"),
+            )
+            .select_related(None)  # Try and make the query as small as possible
+            .prefetch_related(None)
+            .only("id")
+            .get()
+        )
+        params = {"area_id": a.id}
+        if format:
+            params["format"] = format
+        return HttpResponseRedirect(reverse("area", kwargs=params))
+    except Area.DoesNotExist:
+        return mapit_area(request, area_id, format)
