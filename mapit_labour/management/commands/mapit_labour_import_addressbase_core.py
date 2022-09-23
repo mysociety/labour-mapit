@@ -83,10 +83,17 @@ class Command(LabelCommand):
         if self.purge:
             UPRN.objects.all().delete()
 
-            for rows in batched(islice(csv, self.limit or None), self.batch_size):
+        for rows in batched(islice(csv, self.limit or None), self.batch_size):
+            if self.purge:
+                new, existing = rows, []
+            else:
+                new, existing = self.find_existing_uprns(rows)
+            if new:
                 with transaction.atomic():
-                    UPRN.objects.bulk_create(self.create_uprn(row) for row in rows)
-                self.print_stats()
+                    UPRN.objects.bulk_create(self.create_uprn(row) for row in new)
+            if existing:
+                self.update_existing_uprns(existing)
+            self.print_stats()
         self.print_stats()
 
     def create_uprn(self, row: Dict[str, str]):
@@ -101,6 +108,49 @@ class Command(LabelCommand):
             single_line_address=row["single_line_address"],
             addressbase=row,
         )
+
+    def find_existing_uprns(self, rows):
+        """
+        Takes a list of rows from the CSV and divides them into two lists which
+        are returned: those that don't already exist as URPN objects in the DB
+        and those that do.
+        """
+        # need to consume this iterator now because we use it twice below
+        rows = list(rows)
+        db_uprns = {
+            u.uprn: u for u in UPRN.objects.filter(uprn__in=(r["UPRN"] for r in rows))
+        }
+        existing = []
+        new = []
+        for row in rows:
+            uprn = int(row["UPRN"])
+            if uprn in db_uprns:
+                existing.append((row, db_uprns[uprn]))
+            else:
+                new.append(row)
+        return new, existing
+
+    def update_existing_uprns(self, rows):
+        """
+        Takes a list of rows from the CSV that correspond to UPRNs already
+        in the DB and updates them accordingly.
+        """
+        for row, uprn in rows:
+            row = {k.lower(): v for k, v in row.items()}
+            uprn.postcode = row["postcode"].replace(" ", "")
+            uprn.location = Point(
+                float(row["easting"]), float(row["northing"]), srid=27700
+            )
+            uprn.single_line_address = row["single_line_address"]
+            uprn.addressbase = row
+            self.count["total"] += 1
+            self.count["updated"] += 1
+
+        with transaction.atomic():
+            UPRN.objects.bulk_update(
+                [u[1] for u in rows],
+                ["postcode", "location", "single_line_address", "addressbase"],
+            )
 
     def print_stats(self):
         c = self.count

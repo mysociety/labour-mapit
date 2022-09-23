@@ -67,3 +67,74 @@ class AddressBaseImportTest(TestCase):
                 "usrn": "12309821",
             },
         )
+        self.assertEqual(UPRN.objects.get(uprn=9913912312).postcode, "TE57TT")
+
+    def test_load_addressbase_csv_update(self):
+        self.assertEqual(UPRN.objects.count(), 0)
+
+        fixtures_dir = Path(settings.BASE_DIR) / "mapit_labour" / "tests" / "fixtures"
+
+        # First of all import the initial data
+        call_command(
+            "mapit_labour_import_addressbase_core",
+            fixtures_dir / "addressbase-core-tiny.csv",
+            stderr=StringIO(),
+            stdout=StringIO(),
+            purge=True,
+        )
+        self.assertEqual(UPRN.objects.count(), 2)
+
+        # now the update
+        stdout, stderr = StringIO(), StringIO()
+        call_command(
+            "mapit_labour_import_addressbase_core",
+            fixtures_dir / "addressbase-core-update.csv",
+            stderr=stderr,
+            stdout=stdout,
+        )
+
+        self.assertEqual(stderr.getvalue(), "")
+        self.assertEqual(
+            stdout.getvalue(),
+            "Imported 2 (1 new, 1 updated)\nImported 2 (1 new, 1 updated)\n",
+        )
+        self.assertEqual(UPRN.objects.count(), 3)
+
+        uprn = UPRN.objects.get(uprn=77281020)
+        self.assertEqual(uprn.postcode, "TE15TZ")
+        self.assertEqual(uprn.single_line_address, "13 TEST STREET, TESTVILLE, TE1 5TZ")
+        self.assertEqual(uprn.location, Point(297350, 92996, srid=27700))
+        self.assertDictEqual(
+            uprn.addressbase,
+            {
+                "building_name": "",
+                "building_number": "13",
+                "change_code": "U",
+                "classification_code": "RD",
+                "delivery_point_suffix": "2X",
+                "easting": "297350",
+                "gss_code": "E07000041",
+                "island": "",
+                "last_update_date": "2020-03-06",
+                "latitude": "50.7283373",
+                "locality": "",
+                "longitude": "-3.5600416",
+                "northing": "92996",
+                "organisation": "",
+                "parent_uprn": "",
+                "po_box": "",
+                "post_town": "",
+                "postcode": "TE1 5TZ",
+                "rpc": "1",
+                "single_line_address": "13 TEST STREET, TESTVILLE, TE1 5TZ",
+                "street_name": "TEST STREET",
+                "sub_building": "",
+                "toid": "osgb1000012345678",
+                "town_name": "TESTVILLE",
+                "udprn": "1309123",
+                "uprn": "77281020",
+                "usrn": "12309821",
+            },
+        )
+        self.assertEqual(UPRN.objects.get(uprn=9913912312).postcode, "TE57TT")
+        self.assertEqual(UPRN.objects.get(uprn=123891).postcode, "TE57AD")
