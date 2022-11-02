@@ -28,5 +28,5 @@ urlpatterns = [
     # pattern being looked for in mapit_gb.countries.area_code_lookup.
     # URL pattern deliberately limits to LR_/BR_ prefix so most hits should
     # go straight to original view function.
-    url(r"^area/(?P<area_id>[BL]R_[0-9A-Z]+)%s$" % format_end, area),
+    url(r"^area/(?P<area_id>[BL]R_[0-9A-Z_]+)%s$" % format_end, area),
 ]
