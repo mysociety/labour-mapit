@@ -3,6 +3,8 @@ import json
 
 from django.db.models import JSONField
 from django.db import connection
+from django.contrib.auth.models import User
+from django.contrib.auth.admin import UserAdmin as BaseUserAdmin
 from django.contrib.gis import admin
 from django.forms import widgets
 from django.core.paginator import Paginator
@@ -13,6 +15,27 @@ from django.urls import reverse
 from mapit_labour.models import UPRN, APIKey
 
 logger = getLogger(__name__)
+
+
+class UserAdmin(BaseUserAdmin):
+    def get_fieldsets(self, request, obj=None):
+        """Prevent non-superusers changing user permissions and superuser status directly."""
+
+        if not obj:
+            return self.add_fieldsets
+
+        fieldsets = super().get_fieldsets(request, obj)
+
+        if request.user.is_superuser:
+            return fieldsets
+
+        exclude = ("is_superuser", "user_permissions")
+
+        for fs in fieldsets:
+            fields = fs[1]["fields"]
+            fs[1]["fields"] = tuple(f for f in fields if f not in exclude)
+
+        return fieldsets
 
 
 class OSMHTTPSGeoAdmin(admin.OSMGeoAdmin):
@@ -96,6 +119,10 @@ class UPRNAdmin(OSMHTTPSGeoAdmin):
 
 admin.site.register(UPRN, UPRNAdmin)
 admin.site.register(APIKey)
+
+# Register our custom UserAdmin in place of the default one.
+admin.site.unregister(User)
+admin.site.register(User, UserAdmin)
 
 admin.site.site_header = "Labour MapIt"
 admin.site.site_title = "Labour MapIt"
