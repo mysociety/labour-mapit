@@ -123,6 +123,3 @@ admin.site.register(APIKey)
 # Register our custom UserAdmin in place of the default one.
 admin.site.unregister(User)
 admin.site.register(User, UserAdmin)
-
-admin.site.site_header = "Labour MapIt"
-admin.site.site_title = "Labour MapIt"
