@@ -1,5 +1,9 @@
 import json
 
+# Quieten down Django logs, as various errors are deliberately raised
+import logging
+logging.disable(logging.CRITICAL)
+
 from django.contrib.auth.models import User
 from django.contrib.gis.geos import Polygon
 from django.test import TestCase, override_settings
