@@ -55,6 +55,7 @@ class Command(LabelCommand):
     count = {}  # initialised in handle()
     batch_size = 1000
     purge = False
+    dry_run = False
     limit = 0
 
     def add_arguments(self, parser):
@@ -65,6 +66,13 @@ class Command(LabelCommand):
             dest="purge",
             default=self.purge,
             help="Purge all existing UPRNs and import afresh",
+        )
+        parser.add_argument(
+            "--dry-run",
+            action="store_true",
+            dest="dry_run",
+            default=self.dry_run,
+            help="Don't commit changes to database",
         )
         parser.add_argument(
             "--batch-size",
@@ -85,9 +93,13 @@ class Command(LabelCommand):
         self.purge = options["purge"]
         self.batch_size = options["batch_size"]
         self.limit = options["limit"]
+        self.dry_run = options["dry_run"]
 
         with open_compressed_maybe(label, mode="rt", encoding="utf-8-sig") as f:
-            self.handle_rows(DictReader(f))
+            with transaction.atomic():
+                self.handle_rows(DictReader(f))
+                if self.dry_run:
+                    transaction.set_rollback(True)
 
     def handle(self, *args, **kwargs):
         self.count = {
