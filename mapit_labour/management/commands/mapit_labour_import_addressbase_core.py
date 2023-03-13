@@ -106,6 +106,7 @@ class Command(LabelCommand):
             "total": 0,
             "created": 0,
             "updated": 0,
+            "unchanged": 0,
         }
         super().handle(*args, **kwargs)
 
@@ -165,7 +166,9 @@ class Command(LabelCommand):
         Takes a list of rows from the CSV that correspond to UPRNs already
         in the DB and updates them accordingly.
         """
+        changed = set()
         for row, uprn in rows:
+            old = uprn.as_dict()
             row = {k.lower(): v for k, v in row.items()}
             uprn.postcode = row["postcode"].replace(" ", "")
             uprn.location = Point(
@@ -174,16 +177,20 @@ class Command(LabelCommand):
             uprn.single_line_address = row["single_line_address"]
             uprn.addressbase = row
             self.count["total"] += 1
-            self.count["updated"] += 1
+            if uprn.as_dict() != old:
+                changed.add(uprn.pk)
+                self.count["updated"] += 1
+            else:
+                self.count["unchanged"] += 1
 
         with transaction.atomic():
             UPRN.objects.bulk_update(
-                [u[1] for u in rows],
+                [u[1] for u in rows if u[1].pk in changed],
                 ["postcode", "location", "single_line_address", "addressbase"],
             )
 
     def print_stats(self):
         c = self.count
         self.stdout.write(
-            f"Imported {c['total']} ({c['created']} new, {c['updated']} updated)",
+            f"Imported {c['total']} ({c['created']} new, {c['updated']} updated, {c['unchanged']} unchanged)",
         )

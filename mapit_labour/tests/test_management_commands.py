@@ -27,7 +27,7 @@ class AddressBaseImportTest(TestCase):
         self.assertEqual(stderr.getvalue(), "")
         self.assertEqual(
             stdout.getvalue(),
-            "Imported 2 (2 new, 0 updated)\nImported 2 (2 new, 0 updated)\n",
+            "Imported 2 (2 new, 0 updated, 0 unchanged)\nImported 2 (2 new, 0 updated, 0 unchanged)\n",
         )
         self.assertEqual(UPRN.objects.count(), 2)
 
@@ -96,7 +96,7 @@ class AddressBaseImportTest(TestCase):
         self.assertEqual(stderr.getvalue(), "")
         self.assertEqual(
             stdout.getvalue(),
-            "Imported 2 (1 new, 1 updated)\nImported 2 (1 new, 1 updated)\n",
+            "Imported 3 (1 new, 1 updated, 1 unchanged)\nImported 3 (1 new, 1 updated, 1 unchanged)\n",
         )
         self.assertEqual(UPRN.objects.count(), 3)
 
