@@ -40,18 +40,23 @@ class UPRN(models.Model):
     def __str__(self):
         return str(self.uprn)
 
-    def as_dict(self):
-        (lon, lat) = self.as_wgs84()
-
-        return {
+    def as_dict(self, skip_location=False):
+        d = {
             "uprn": self.uprn,
             "postcode": self.postcode,
-            "easting": self.location[0],
-            "northing": self.location[1],
-            "wgs84_lon": lon,
-            "wgs84_lat": lat,
             "addressbase_core": self.addressbase,
         }
+        if not skip_location:
+            (lon, lat) = self.as_wgs84()
+            d.update(
+                {
+                    "wgs84_lon": lon,
+                    "wgs84_lat": lat,
+                    "easting": self.location.x,
+                    "northing": self.location.y,
+                }
+            )
+        return d
 
     def as_wgs84(self):
         cursor = connection.cursor()

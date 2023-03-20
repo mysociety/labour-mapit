@@ -96,10 +96,7 @@ class Command(LabelCommand):
         self.dry_run = options["dry_run"]
 
         with open_compressed_maybe(label, mode="rt", encoding="utf-8-sig") as f:
-            with transaction.atomic():
-                self.handle_rows(DictReader(f))
-                if self.dry_run:
-                    transaction.set_rollback(True)
+            self.handle_rows(DictReader(f))
 
     def handle(self, *args, **kwargs):
         self.count = {
@@ -111,7 +108,7 @@ class Command(LabelCommand):
         super().handle(*args, **kwargs)
 
     def handle_rows(self, csv: DictReader):
-        if self.purge:
+        if self.purge and not self.dry_run:
             UPRN.objects.all().delete()
 
         for rows in batched(islice(csv, self.limit or None), self.batch_size):
@@ -120,8 +117,7 @@ class Command(LabelCommand):
             else:
                 new, existing = self.find_existing_uprns(rows)
             if new:
-                with transaction.atomic():
-                    UPRN.objects.bulk_create(self.create_uprn(row) for row in new)
+                self.create_new_uprns(new)
             if existing:
                 self.update_existing_uprns(existing)
             self.print_stats()
@@ -139,6 +135,11 @@ class Command(LabelCommand):
             single_line_address=row["single_line_address"],
             addressbase=row,
         )
+
+    def create_new_uprns(self, rows):
+        with transaction.atomic():
+            UPRN.objects.bulk_create(self.create_uprn(row) for row in rows)
+            transaction.set_rollback(self.dry_run)
 
     def find_existing_uprns(self, rows):
         """
@@ -168,7 +169,7 @@ class Command(LabelCommand):
         """
         changed = set()
         for row, uprn in rows:
-            old = uprn.as_dict()
+            old = uprn.as_dict(skip_location=True)
             row = {k.lower(): v for k, v in row.items()}
             uprn.postcode = row["postcode"].replace(" ", "")
             uprn.location = Point(
@@ -177,7 +178,7 @@ class Command(LabelCommand):
             uprn.single_line_address = row["single_line_address"]
             uprn.addressbase = row
             self.count["total"] += 1
-            if uprn.as_dict() != old:
+            if uprn.as_dict(skip_location=True) != old:
                 changed.add(uprn.pk)
                 self.count["updated"] += 1
             else:
@@ -188,6 +189,7 @@ class Command(LabelCommand):
                 [u[1] for u in rows if u[1].pk in changed],
                 ["postcode", "location", "single_line_address", "addressbase"],
             )
+            transaction.set_rollback(self.dry_run)
 
     def print_stats(self):
         c = self.count
