@@ -1,16 +1,19 @@
-from itertools import groupby, islice
-from typing import Dict
+from itertools import groupby
 from collections import deque
 from contextlib import contextmanager
 import gzip
 import bz2
+import codecs
+import io
+import json
+import sys
+import time
 
 from django.conf import settings
 from django.core.management.base import LabelCommand
-from django.contrib.gis.geos import Point
 from django.db import transaction, connection
 
-from csv import DictReader
+from csv import DictReader, writer
 
 
 from mapit_labour.models import UPRN
@@ -37,8 +40,14 @@ def batched(iterable, size):
 def open_compressed_maybe(path, **kwargs):
     """
     Helper function to abstract away opening a file that may be GZip, BZ2 or
-    uncompressed.
+    uncompressed, or STDIN.
     """
+
+    if path == "-":
+        fin = codecs.getreader("utf_8_sig")(sys.stdin.buffer, errors="replace")
+        yield fin
+        return
+
     openers = {
         "gz": gzip.open,
         "bz2": bz2.open,
@@ -48,15 +57,57 @@ def open_compressed_maybe(path, **kwargs):
         yield f
 
 
+# From https://stackoverflow.com/a/20260030
+def iterable_to_stream(iterable, buffer_size=io.DEFAULT_BUFFER_SIZE):
+    """
+    Lets you use an iterable (e.g. a generator) that yields bytestrings as a read-only
+    input stream. For efficiency, the stream is buffered.
+    """
+
+    class IterStream(io.RawIOBase):
+        def __init__(self):
+            self.leftover = None
+
+        def readable(self):
+            return True
+
+        def readinto(self, b):
+            try:
+                ll = len(b)  # We're supposed to return at most this much
+                chunk = self.leftover or next(iterable)
+                output, self.leftover = chunk[:ll], chunk[ll:]
+                b[: len(output)] = output
+                return len(output)
+            except StopIteration:
+                return 0  # indicate EOF
+
+    return io.BufferedReader(IterStream(), buffer_size=buffer_size)
+
+
+def process_row(row):
+    row = {k.lower(): v for k, v in row.items()}
+    row = (
+        row["uprn"],
+        row["postcode"].replace(" ", ""),
+        row["easting"],
+        row["northing"],
+        row["single_line_address"],
+        json.dumps(row),
+    )
+    f = io.StringIO()
+    writer(f).writerow(row)
+    row = f.getvalue()
+    row = row.encode()
+    return row
+
+
 class Command(LabelCommand):
     help = "Imports UK UPRNs from AddressBase Core"
     label = "<AddressBase Core CSV file>"
 
-    count = {}  # initialised in handle()
     batch_size = 1000
     purge = False
     dry_run = False
-    limit = 0
 
     def add_arguments(self, parser):
         super().add_arguments(parser)
@@ -81,118 +132,74 @@ class Command(LabelCommand):
             default=self.batch_size,
             help=f"Batch size for bulk INSERT/UPDATE operations. Default {self.batch_size}",
         )
-        parser.add_argument(
-            "--limit",
-            dest="limit",
-            type=int,
-            default=self.limit,
-            help="Stop after importing this many rows from the CSV. 0 (default) for no limit.",
-        )
 
     def handle_label(self, label: str, **options):
         self.purge = options["purge"]
         self.batch_size = options["batch_size"]
-        self.limit = options["limit"]
         self.dry_run = options["dry_run"]
 
         with open_compressed_maybe(label, mode="rt", encoding="utf-8-sig") as f:
-            self.handle_rows(DictReader(f))
+            self.handle_start(DictReader(f))
 
-    def handle(self, *args, **kwargs):
+    def handle_start(self, csv: DictReader):
+        if self.purge and not self.dry_run:
+            UPRN.objects.all().delete()
+
         self.count = {
             "total": 0,
             "created": 0,
             "updated": 0,
-            "unchanged": 0,
         }
-        super().handle(*args, **kwargs)
 
-    def handle_rows(self, csv: DictReader):
+        cursor = connection.cursor()
+        cursor.execute(
+            "CREATE TEMPORARY TABLE mapit_labour_uprn_new "
+            "(uprn bigint, postcode varchar(7), location geometry(Point, 27700), easting float, northing float, single_line_address text, addressbase jsonb) "
+            "ON COMMIT DELETE ROWS"
+        )
+
+        i = 0
+        start = time.time()
+        for rows in batched(csv, self.batch_size):
+            i += 1
+            self.handle_rows(rows)
+            dur = time.time() - start
+            print(
+                f"\rBatch {i}, {dur:.0f}s, {i/dur:.1f} batch/s, {self.count['created']} created, {self.count['updated']} updated, {self.count['total']} total",
+                end="",
+            )
+        print("")
+
+        cursor.execute("DROP TABLE mapit_labour_uprn_new")
+
+    def handle_rows(self, csv):
         if self.purge and not self.dry_run:
             UPRN.objects.all().delete()
 
-        for rows in batched(islice(csv, self.limit or None), self.batch_size):
-            if self.purge:
-                new, existing = rows, []
-            else:
-                new, existing = self.find_existing_uprns(rows)
-            if new:
-                self.create_new_uprns(new)
-            if existing:
-                self.update_existing_uprns(existing)
-            self.print_stats()
-        self.print_stats()
-
-    def create_uprn(self, row: Dict[str, str]):
-        row = {k.lower(): v for k, v in row.items()}
-
-        self.count["total"] += 1
-        self.count["created"] += 1
-        return UPRN(
-            uprn=row["uprn"],
-            postcode=row["postcode"].replace(" ", ""),
-            location=Point(float(row["easting"]), float(row["northing"]), srid=27700),
-            single_line_address=row["single_line_address"],
-            addressbase=row,
-        )
-
-    def create_new_uprns(self, rows):
-        with transaction.atomic():
-            UPRN.objects.bulk_create(self.create_uprn(row) for row in rows)
-            transaction.set_rollback(self.dry_run)
-
-    def find_existing_uprns(self, rows):
-        """
-        Takes a list of rows from the CSV and divides them into two lists which
-        are returned: those that don't already exist as URPN objects in the DB
-        and those that do.
-        """
-        # need to consume this iterator now because we use it twice below
-        rows = list(rows)
-        db_uprns = {
-            u.uprn: u for u in UPRN.objects.filter(uprn__in=(r["UPRN"] for r in rows))
-        }
-        existing = []
-        new = []
-        for row in rows:
-            uprn = int(row["UPRN"])
-            if uprn in db_uprns:
-                existing.append((row, db_uprns[uprn]))
-            else:
-                new.append(row)
-        return new, existing
-
-    def update_existing_uprns(self, rows):
-        """
-        Takes a list of rows from the CSV that correspond to UPRNs already
-        in the DB and updates them accordingly.
-        """
-        changed = set()
-        for row, uprn in rows:
-            old = uprn.as_dict(skip_location=True)
-            row = {k.lower(): v for k, v in row.items()}
-            uprn.postcode = row["postcode"].replace(" ", "")
-            uprn.location = Point(
-                float(row["easting"]), float(row["northing"]), srid=27700
-            )
-            uprn.single_line_address = row["single_line_address"]
-            uprn.addressbase = row
-            self.count["total"] += 1
-            if uprn.as_dict(skip_location=True) != old:
-                changed.add(uprn.pk)
-                self.count["updated"] += 1
-            else:
-                self.count["unchanged"] += 1
+        csv = map(process_row, csv)
+        csv = iterable_to_stream(csv)
 
         with transaction.atomic():
-            UPRN.objects.bulk_update(
-                [u[1] for u in rows if u[1].pk in changed],
-                ["postcode", "location", "single_line_address", "addressbase"],
+            cursor = connection.cursor()
+            cursor.copy_expert(
+                "COPY mapit_labour_uprn_new(uprn, postcode, easting, northing, single_line_address, addressbase) "
+                "FROM STDIN WITH (FORMAT csv)",
+                csv,
             )
+            self.count["total"] += cursor.rowcount
+            cursor.execute(
+                "UPDATE mapit_labour_uprn_new SET location = ST_SetSRID(ST_Point(easting, northing), 27700)"
+            )
+            cursor.execute(
+                "UPDATE mapit_labour_uprn SET postcode = n.postcode, location = n.location, single_line_address = n.single_line_address, addressbase = n.addressbase "
+                "FROM mapit_labour_uprn_new n "
+                "WHERE n.addressbase IS DISTINCT FROM mapit_labour_uprn.addressbase AND n.uprn = mapit_labour_uprn.uprn"
+            )
+            self.count["updated"] += cursor.rowcount
+            cursor.execute(
+                "INSERT INTO mapit_labour_uprn (uprn, postcode, location, single_line_address, addressbase) "
+                "SELECT n.uprn, n.postcode, n.location, n.single_line_address, n.addressbase FROM mapit_labour_uprn_new n "
+                "LEFT JOIN mapit_labour_uprn p ON n.uprn = p.uprn WHERE p.uprn IS NULL"
+            )
+            self.count["created"] += cursor.rowcount
             transaction.set_rollback(self.dry_run)
-
-    def print_stats(self):
-        c = self.count
-        self.stdout.write(
-            f"Imported {c['total']} ({c['created']} new, {c['updated']} updated, {c['unchanged']} unchanged)",
-        )

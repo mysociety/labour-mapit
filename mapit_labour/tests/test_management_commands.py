@@ -15,20 +15,15 @@ class AddressBaseImportTest(TestCase):
         self.assertEqual(UPRN.objects.count(), 0)
 
         fixtures_dir = Path(settings.BASE_DIR) / "mapit_labour" / "tests" / "fixtures"
-        stdout, stderr = StringIO(), StringIO()
+        stderr = StringIO()
         call_command(
             "mapit_labour_import_addressbase_core",
             fixtures_dir / "addressbase-core-tiny.csv",
             purge=True,
             stderr=stderr,
-            stdout=stdout,
         )
 
         self.assertEqual(stderr.getvalue(), "")
-        self.assertEqual(
-            stdout.getvalue(),
-            "Imported 2 (2 new, 0 updated, 0 unchanged)\nImported 2 (2 new, 0 updated, 0 unchanged)\n",
-        )
         self.assertEqual(UPRN.objects.count(), 2)
 
         uprn = UPRN.objects.get(uprn=77281020)
@@ -79,25 +74,19 @@ class AddressBaseImportTest(TestCase):
             "mapit_labour_import_addressbase_core",
             fixtures_dir / "addressbase-core-tiny.csv",
             stderr=StringIO(),
-            stdout=StringIO(),
             purge=True,
         )
         self.assertEqual(UPRN.objects.count(), 2)
 
         # now the update
-        stdout, stderr = StringIO(), StringIO()
+        stderr = StringIO()
         call_command(
             "mapit_labour_import_addressbase_core",
             fixtures_dir / "addressbase-core-update.csv",
             stderr=stderr,
-            stdout=stdout,
         )
 
         self.assertEqual(stderr.getvalue(), "")
-        self.assertEqual(
-            stdout.getvalue(),
-            "Imported 3 (1 new, 1 updated, 1 unchanged)\nImported 3 (1 new, 1 updated, 1 unchanged)\n",
-        )
         self.assertEqual(UPRN.objects.count(), 3)
 
         uprn = UPRN.objects.get(uprn=77281020)
