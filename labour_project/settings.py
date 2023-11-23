@@ -1,4 +1,5 @@
 import os
+import sys
 import yaml
 from .utils import skip_unreadable_post
 
@@ -97,6 +98,47 @@ DATABASES = {
     }
 }
 
+if config.get('MAPIT_DB_RO_HOST', '') and 'test' not in sys.argv:
+    DATABASES['replica'] = {
+        'ENGINE': 'django.contrib.gis.db.backends.postgis',
+        'NAME': config.get('MAPIT_DB_NAME', 'mapit'),
+        'USER': config.get('MAPIT_DB_USER', 'mapit'),
+        'PASSWORD': config.get('MAPIT_DB_PASS', ''),
+        'HOST': config['MAPIT_DB_RO_HOST'],
+        'PORT': config['MAPIT_DB_RO_PORT'],
+        # Should work, but does not appear to (hence sys.argv test above); see
+        # https://stackoverflow.com/questions/33941139/test-mirror-default-database-but-no-data
+        # 'TEST': {
+        #     'MIRROR': 'default',
+        # },
+    }
+
+    import random
+    from .multidb import use_primary
+
+    class PrimaryReplicaRouter(object):
+        """A basic primary/replica database router."""
+        def db_for_read(self, model, **hints):
+            """Randomly pick between default and replica databases, unless the
+            request (via middleware) demands we use the primary."""
+            if use_primary():
+                return 'default'
+            return random.choice(['default', 'replica'])
+
+        def db_for_write(self, model, **hints):
+            """Always write to the primary database."""
+            return 'default'
+
+        def allow_relation(self, obj1, obj2, **hints):
+            """Any relation between objects is allowed, as same data."""
+            return True
+
+        def allow_migrate(self, db, app_label, model_name=None, **hints):
+            """migrate is only ever called on the default database."""
+            return True
+
+    DATABASE_ROUTERS = ['labour_project.settings.PrimaryReplicaRouter']
+
 # Make this unique, and don't share it with anybody.
 SECRET_KEY = config.get('DJANGO_SECRET_KEY', '')
 
@@ -170,6 +212,9 @@ MIDDLEWARE = [
     'mapit.middleware.JSONPMiddleware',
     'mapit.middleware.ViewExceptionMiddleware',
 ]
+
+if config.get('MAPIT_DB_RO_HOST', '') and 'test' not in sys.argv:
+    MIDDLEWARE.insert(0, 'labour_project.middleware.force_primary_middleware')
 
 if DEBUG:
     MIDDLEWARE.insert(0, 'debug_toolbar.middleware.DebugToolbarMiddleware')
