@@ -8,6 +8,7 @@ from django.conf import settings
 from django.utils.cache import add_never_cache_headers
 from django.urls import reverse
 from django.http import Http404
+from django.views.decorators.cache import never_cache
 
 from django_q.tasks import fetch
 from django_q.models import OrmQ
@@ -57,6 +58,7 @@ FIELD_NAMES = [
 ]
 
 
+@never_cache
 def uprn(request, uprn, format="json"):
     uprn = get_object_or_404(UPRN, format=format, uprn=uprn)
 
