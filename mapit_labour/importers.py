@@ -161,6 +161,7 @@ class BranchCSVImporter:
         codetypes = {k: CodeType.objects.get(code=k.lower()) for k in VALID_CODES}
         areatypes = {k: Type.objects.get(code=k) for k in VALID_CODES}
 
+        self.update_progress("Parsing/validating CSV file")
         branches = {}
         parent_gss_codes = set()
         for i, row in enumerate(csv, start=2):
@@ -182,6 +183,7 @@ class BranchCSVImporter:
             if parent_gss_code := row["parent_gss_code"]:
                 parent_gss_codes.add(parent_gss_code)
 
+        self.update_progress("Loading parent areas")
         parents = self._load_parents(parent_gss_codes)
         branch_count = len(branches)
         for i, branch in enumerate(branches.values(), start=1):
