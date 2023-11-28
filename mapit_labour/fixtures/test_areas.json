@@ -21,6 +21,14 @@
         }
     },
     {
+        "model": "mapit.geometrysubdivided",
+        "pk": 1,
+        "fields": {
+            "geometry": 1,
+            "division": "SRID=27700;POLYGON ((297340 93006, 297340 92986, 297360 92986, 297360 93006, 297340 93006))"
+        }
+    },
+    {
         "model": "mapit.generation",
         "pk": 1,
         "fields": {
