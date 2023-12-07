@@ -143,6 +143,7 @@ if config.get('MAPIT_DB_RO_HOST', '') and 'test' not in sys.argv:
 SECRET_KEY = config.get('DJANGO_SECRET_KEY', '')
 
 ALLOWED_HOSTS = ['*']
+CSRF_TRUSTED_ORIGINS = config.get('CSRF_TRUSTED_ORIGINS', [])
 
 TIME_ZONE = 'Europe/London'
 LANGUAGE_CODE = 'en-gb'

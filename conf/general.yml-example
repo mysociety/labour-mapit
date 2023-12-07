@@ -43,3 +43,7 @@ EMAIL_SUBJECT_PREFIX: '[MapIt] '
 
 # Maximum number of results returned from /addressbase API call
 ADDRESSBASE_RESULTS_LIMIT: 100
+
+# List of origins that unsafe (e.g. POST) requests are accepted from
+# Should generally just be https://<vhost name>
+CSRF_TRUSTED_ORIGINS: []
