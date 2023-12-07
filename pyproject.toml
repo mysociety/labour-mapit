@@ -19,7 +19,7 @@ django-mapit = {git = "https://github.com/mysociety/mapit", branch = "master"}
 django-q = "^1.3.9"
 django-crispy-forms = "^2.1"
 crispy-forms-gds = "^0.2.4"
-python-memcached = "^1.59"
+pymemcache = "^4.0.0"
 
 [tool.poetry.dev-dependencies]
 ipython = "^7.30.1"
