@@ -55,10 +55,10 @@ if DEBUG and not config.get('DEBUG_USE_MEMCACHE', False):
     CACHE_MIDDLEWARE_SECONDS = 0
 else: # pragma: no cover
     try:
-        import memcache
+        import pymemcache
         CACHES = {
             'default': {
-                'BACKEND': 'django.core.cache.backends.memcached.MemcachedCache',
+                'BACKEND': 'django.core.cache.backends.memcached.PyMemcacheCache',
                 'LOCATION': '127.0.0.1:11211',
                 'TIMEOUT': 86400,
             }
