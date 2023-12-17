@@ -64,9 +64,13 @@ jobs:
         echo 'DJANGO_SECRET_KEY: secret' >> conf/general.yml
 
 
-    - name: Run tests
+    - name: Run tests with coverage
       env:
         SECRET_KEY: 'secret'
         DATABASE_URL: 'postgis://postgres:password@localhost/mapit'
-        COBRAND: 'cobrand_hackney'
-      run: python manage.py test
+      run: coverage run manage.py test
+
+    - name: Upload coverage reports to Codecov
+      uses: codecov/codecov-action@v3
+      env:
+        CODECOV_TOKEN: ${{ secrets.CODECOV_TOKEN }}
