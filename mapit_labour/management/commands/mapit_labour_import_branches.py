@@ -30,7 +30,7 @@ class Command(LabelCommand):
         )
         if result["error"]:
             raise CommandError(result["error"])
-        print(f"Created: {result['created']}\nUpdated: {result['updated']}")
+        self.stdout.write(f"Created: {result['created']}\nUpdated: {result['updated']}")
         if result["warnings"]:
-            print(f"Warnings: {len(result['warnings'])}")
-            print("\n".join(result["warnings"]))
+            self.stdout.write(f"Warnings: {len(result['warnings'])}")
+            self.stdout.write("\n".join(result["warnings"]))

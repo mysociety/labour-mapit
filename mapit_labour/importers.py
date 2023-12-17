@@ -187,6 +187,7 @@ class BranchCSVImporter:
         parents = self._load_parents(parent_gss_codes)
         branch_count = len(branches)
         for i, branch in enumerate(branches.values(), start=1):
+            created_area_for_branch = False
             self.update_progress(f"Working on area {i} of {branch_count}")
             parent_area = parents.get(branch["parent_gss_code"])
 
@@ -218,6 +219,7 @@ class BranchCSVImporter:
                     parent_area=parent_area,
                 )
                 self.created += 1
+                created_area_for_branch = True
 
             a.codes.update_or_create(
                 type=gss_codetype, defaults={"code": branch["area_gss"]}
@@ -262,6 +264,8 @@ class BranchCSVImporter:
                     f"Branch {branch['area_id']} doesn't overlap with parent area ({branch['parent_gss_code']}), not creating."
                 )
                 a.delete()
+                if created_area_for_branch:
+                    self.created -= 1
             elif area_area < 50000:
                 self.warnings.append(
                     f"Area {a.id} (branch {branch['area_id']}) has a small geographic area ({int(area_area)} ㎡)"

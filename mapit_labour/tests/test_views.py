@@ -2,6 +2,7 @@ import json
 
 # Quieten down Django logs, as various errors are deliberately raised
 import logging
+
 logging.disable(logging.CRITICAL)
 
 from django.contrib.auth.models import User

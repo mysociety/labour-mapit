@@ -63,6 +63,11 @@ jobs:
         echo 'MAPIT_DB_HOST: localhost' >> conf/general.yml
         echo 'DJANGO_SECRET_KEY: secret' >> conf/general.yml
 
+    - name: Run migrations
+      env:
+        SECRET_KEY: 'secret'
+        DATABASE_URL: 'postgis://postgres:password@localhost/mapit'
+      run: python manage.py migrate
 
     - name: Run tests with coverage
       env:
