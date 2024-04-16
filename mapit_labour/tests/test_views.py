@@ -14,6 +14,8 @@ from .utils import LoadTestData
 
 
 class LoginRequiredTestCase(LoadTestData, TestCase):
+    fixtures = ["uk", "test_areas"]
+
     def test_redirect_to_login(self):
         self.client.logout()
 

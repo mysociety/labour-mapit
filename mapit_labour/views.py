@@ -62,11 +62,8 @@ FIELD_NAMES = [
 def uprn(request, uprn, format="json"):
     uprn = get_object_or_404(UPRN, format=format, uprn=uprn)
 
-    try:
-        generation = int(request.GET["generation"])
-    except:
-        generation = Generation.objects.current()
-    areas = list(add_codes(Area.objects.by_location(uprn.location, generation)))
+    query = Generation.objects.query_args(request, format)
+    areas = list(add_codes(Area.objects.by_location(uprn.location, query)))
 
     shortcuts = {}
     for area in areas:
