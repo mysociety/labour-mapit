@@ -342,7 +342,7 @@ uk-postcode-utils = "*"
 type = "git"
 url = "https://github.com/mysociety/mapit"
 reference = "master"
-resolved_reference = "4f6f27441bbc1ae1074471e694c6274fd2dca986"
+resolved_reference = "b372a8c3a2fd2da4ab9e3f8c0d9462725dce5977"
 
 [[package]]
 name = "django-picklefield"
