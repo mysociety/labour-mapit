@@ -165,7 +165,7 @@ class Command(LabelCommand):
             self.handle_rows(rows)
             dur = time.time() - start
             print(
-                f"\rBatch {i}, {dur:.0f}s, {i/dur:.1f} batch/s, {self.count['created']} created, {self.count['updated']} updated, {self.count['total']} total",
+                f"\rBatch {i}, {dur:.0f}s, {i/dur:.1f} batch/s, {self.count['total']/dur:.1f} row/s, {self.count['created']} created, {self.count['updated']} updated, {self.count['total']} total",
                 end="",
             )
         print("")
