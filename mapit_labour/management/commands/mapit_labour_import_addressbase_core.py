@@ -173,9 +173,6 @@ class Command(LabelCommand):
         cursor.execute("DROP TABLE mapit_labour_uprn_new")
 
     def handle_rows(self, csv):
-        if self.purge and not self.dry_run:
-            UPRN.objects.all().delete()
-
         csv = map(process_row, csv)
         csv = iterable_to_stream(csv)
 
