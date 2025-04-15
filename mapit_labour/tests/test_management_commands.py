@@ -16,13 +16,16 @@ class AddressBaseImportTest(TestCase):
 
         fixtures_dir = Path(settings.BASE_DIR) / "mapit_labour" / "tests" / "fixtures"
         stderr = StringIO()
+        stdout = StringIO()
         call_command(
             "mapit_labour_import_addressbase_core",
             fixtures_dir / "addressbase-core-tiny.csv",
             purge=True,
             stderr=stderr,
+            stdout=stdout,
         )
 
+        self.assertIn("2 created, 0 updated, 2 total", stdout.getvalue())
         self.assertEqual(stderr.getvalue(), "")
         self.assertEqual(UPRN.objects.count(), 2)
 
@@ -74,18 +77,22 @@ class AddressBaseImportTest(TestCase):
             "mapit_labour_import_addressbase_core",
             fixtures_dir / "addressbase-core-tiny.csv",
             stderr=StringIO(),
+            stdout=StringIO(),
             purge=True,
         )
         self.assertEqual(UPRN.objects.count(), 2)
 
         # now the update
         stderr = StringIO()
+        stdout = StringIO()
         call_command(
             "mapit_labour_import_addressbase_core",
             fixtures_dir / "addressbase-core-update.csv",
             stderr=stderr,
+            stdout=stdout,
         )
 
+        self.assertIn("1 created, 1 updated, 3 total", stdout.getvalue())
         self.assertEqual(stderr.getvalue(), "")
         self.assertEqual(UPRN.objects.count(), 3)
 
