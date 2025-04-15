@@ -134,3 +134,45 @@ class AddressBaseImportTest(TestCase):
         )
         self.assertEqual(UPRN.objects.get(uprn=9913912312).postcode, "TE57TT")
         self.assertEqual(UPRN.objects.get(uprn=123891).postcode, "TE57AD")
+
+    def test_load_addressbase_csv_incremental_update(self):
+        self.assertEqual(UPRN.objects.count(), 0)
+
+        fixtures_dir = Path(settings.BASE_DIR) / "mapit_labour" / "tests" / "fixtures"
+
+        # First of all import the initial data
+        call_command(
+            "mapit_labour_import_addressbase_core",
+            fixtures_dir / "addressbase-core-tiny.csv",
+            stderr=StringIO(),
+            stdout=StringIO(),
+            purge=True,
+        )
+        self.assertEqual(UPRN.objects.count(), 2)
+
+        # now the incremental update
+        stderr = StringIO()
+        stdout = StringIO()
+        call_command(
+            "mapit_labour_import_addressbase_core",
+            fixtures_dir / "addressbase-core-incremental.csv",
+            incremental=True,
+            stderr=stderr,
+            stdout=stdout,
+        )
+
+        self.assertIn("1 created, 1 updated, 2 total", stdout.getvalue())
+        self.assertEqual(stderr.getvalue(), "")
+        self.assertEqual(UPRN.objects.count(), 3)
+
+        uprn = UPRN.objects.get(uprn=9913912312)
+        self.assertEqual(
+            uprn.addressbase["organisation"],
+            "EL CAPITAN CROCKERY",
+            msg="Row with name update was ignored as it was too old",
+        )
+
+        with self.assertRaises(
+            UPRN.DoesNotExist, msg="Row with new UPRN was ignored as it was too old"
+        ):
+            UPRN.objects.get(uprn=123890)
