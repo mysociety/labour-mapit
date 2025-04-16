@@ -84,6 +84,12 @@ def iterable_to_stream(iterable, buffer_size=io.DEFAULT_BUFFER_SIZE):
     return io.BufferedReader(IterStream(), buffer_size=buffer_size)
 
 
+def filter_old_rows(csv, cutoff):
+    for row in csv:
+        if row["LAST_UPDATE_DATE"] > cutoff:
+            yield row
+
+
 def process_row(row):
     row = {k.lower(): v for k, v in row.items()}
     row = (
@@ -108,16 +114,28 @@ class Command(LabelCommand):
     batch_size = 1000
     purge = False
     dry_run = False
+    incremental = False
 
     def add_arguments(self, parser):
         super().add_arguments(parser)
-        parser.add_argument(
+
+        # can't specify --purge and --incremental at the same time
+        group = parser.add_mutually_exclusive_group()
+        group.add_argument(
+            "--incremental",
+            action="store_true",
+            dest="incremental",
+            default=self.incremental,
+            help="Only process rows whose LAST_UPDATE_DATE is after the most recent already in the DB",
+        )
+        group.add_argument(
             "--purge",
             action="store_true",
             dest="purge",
             default=self.purge,
             help="Purge all existing UPRNs and import afresh",
         )
+
         parser.add_argument(
             "--dry-run",
             action="store_true",
@@ -135,6 +153,7 @@ class Command(LabelCommand):
 
     def handle_label(self, label: str, **options):
         self.purge = options["purge"]
+        self.incremental = options["incremental"]
         self.batch_size = options["batch_size"]
         self.dry_run = options["dry_run"]
 
@@ -144,6 +163,19 @@ class Command(LabelCommand):
     def handle_start(self, csv: DictReader):
         if self.purge and not self.dry_run:
             UPRN.objects.all().delete()
+
+        if self.incremental:
+            # query the DB to find when the most recent update was
+            self.stdout.write(
+                "Ignoring CSV rows last updated on or before: ",
+                ending="",
+            )
+            self.stdout.flush()
+            cutoff = UPRN.objects.values_list("addressbase", flat=True).order_by(
+                "-addressbase__last_update_date"
+            )[0]["last_update_date"]
+            print(f"{cutoff}", file=self.stdout)
+            csv = filter_old_rows(csv, cutoff)
 
         self.count = {
             "total": 0,
@@ -164,18 +196,15 @@ class Command(LabelCommand):
             i += 1
             self.handle_rows(rows)
             dur = time.time() - start
-            print(
-                f"\rBatch {i}, {dur:.0f}s, {i/dur:.1f} batch/s, {self.count['created']} created, {self.count['updated']} updated, {self.count['total']} total",
-                end="",
+            self.stdout.write(
+                f"\rBatch {i}, {dur:.0f}s, {i/dur:.1f} batch/s, {self.count['total']/dur:.1f} row/s, {self.count['created']} created, {self.count['updated']} updated, {self.count['total']} total",
+                ending="",
             )
-        print("")
+        print("", file=self.stdout)
 
         cursor.execute("DROP TABLE mapit_labour_uprn_new")
 
     def handle_rows(self, csv):
-        if self.purge and not self.dry_run:
-            UPRN.objects.all().delete()
-
         csv = map(process_row, csv)
         csv = iterable_to_stream(csv)
 
