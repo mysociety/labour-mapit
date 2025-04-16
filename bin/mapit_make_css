@@ -13,8 +13,8 @@
 
 import os
 from pathlib import Path
-import subprocess
 import mapit
+import pysassc
 
 parent_dir = Path(__file__).resolve().parent.parent
 
@@ -46,13 +46,17 @@ with open(in_scss_path, "w") as core_file:
 """
     )
 
-subprocess.check_call(
-    [
+# As a workaround for the `pysassc` script potentially having a hardcoded
+# path to a python interpreter in a directory that might no longer exist
+# on mySoc infrastructure (see sysadmin#1017), we call the pysassc module
+# directly.
+pysassc.main(
+    argv=[
         "pysassc",
         "--sourcemap",
         "--style",
         "compressed",
-        in_scss_path,
-        out_css_path,
+        str(in_scss_path),
+        str(out_css_path),
     ]
 )
