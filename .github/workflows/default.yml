@@ -37,7 +37,7 @@ jobs:
     - name: Set up python
       uses: actions/setup-python@v2
       with:
-        python-version: 3.9
+        python-version: 3.11
 
     - name: Load cached venv
       uses: actions/cache@v3
@@ -50,7 +50,7 @@ jobs:
       env:
         POETRY_VIRTUALENVS_CREATE: "false"
       run: |
-        pip install poetry==1.4.2
+        pip install poetry==2.2.1
         poetry install --no-interaction --no-root
 
     - name: Set up database & config
