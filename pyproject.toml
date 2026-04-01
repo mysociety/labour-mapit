@@ -21,7 +21,7 @@ django-crispy-forms = "^2.1"
 crispy-forms-gds = "^0.2.4"
 pymemcache = "^4.0.0"
 
-[tool.poetry.dev-dependencies]
+[tool.poetry.group.dev.dependencies]
 ipython = "^7.30.1"
 django-debug-toolbar = "^3.2.2"
 coverage = "^6.2"
