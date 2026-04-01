@@ -245,14 +245,14 @@ files = [
 
 [[package]]
 name = "django"
-version = "4.2.7"
+version = "4.2.29"
 description = "A high-level Python web framework that encourages rapid development and clean, pragmatic design."
 optional = false
 python-versions = ">=3.8"
 groups = ["main", "dev"]
 files = [
-    {file = "Django-4.2.7-py3-none-any.whl", hash = "sha256:e1d37c51ad26186de355cbcec16613ebdabfa9689bbade9c538835205a8abbe9"},
-    {file = "Django-4.2.7.tar.gz", hash = "sha256:8e0f1c2c2786b5c0e39fe1afce24c926040fad47c8ea8ad30aaf1188df29fc41"},
+    {file = "django-4.2.29-py3-none-any.whl", hash = "sha256:074d7c4d2808050e528388bda442bd491f06def4df4fe863f27066851bba010c"},
+    {file = "django-4.2.29.tar.gz", hash = "sha256:86d91bc8086569c8d08f9c55888b583a921ac1f95ed3bdc7d5659d4709542014"},
 ]
 
 [package.dependencies]
@@ -1044,4 +1044,4 @@ files = [
 [metadata]
 lock-version = "2.1"
 python-versions = ">=3.11,<3.15"
-content-hash = "13e0bae6a8b1414bab9d8de9fa7c0ead9f5e1e55cec0832c89186208a93520da"
+content-hash = "3f90086806e77460aa23e11c254d290e3e4299df8b359f6b8a6684e9589ef3fa"
